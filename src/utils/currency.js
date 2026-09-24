@@ -1,5 +1,5 @@
 /**
- * Ralahami Restaurant - Sri Lankan Rupee (Rs.) Currency Utility
+ * Raalahami Restaurant - Sri Lankan Rupee (Rs.) Currency Utility
  * Centralized formatting for currency values across the entire presentation tier
  */
 export const formatCurrency = (amount, includeDecimals = false) => {

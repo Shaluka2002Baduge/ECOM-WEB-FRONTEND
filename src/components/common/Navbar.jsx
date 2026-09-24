@@ -1,26 +1,43 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth, ROLES } from '../../context/AuthContext';
+import { ShoppingBag, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '../../utils/currency';
 import Button from './Button';
 
 /**
- * Accessible Navbar Component
- * Compliant with WCAG 2.1 Landmark roles & Navigation guidelines
+ * Accessible Raalahami Royal Navbar Component
+ * Features:
+ * - Prominent expanded sticky glassmorphism header (5rem height)
+ * - Large royal badge logo: RAALAHAMI | Royal Heritage Fine Dining
+ * - Underline hover animations on navigation links
+ * - Glowing Cart pill with live count and gold action highlight
+ * - Dynamic RBAC role links (Admin Dashboard / Kitchen Display)
  */
 const Navbar = () => {
-  const { user, role, logout, switchRole, isAuthenticated } = useAuth();
+  const { user, role, logout, isAuthenticated } = useAuth();
   const { totalItems, totalPrice, toggleDrawer } = useCart();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navLinks = [
+  // Base public links available to all patrons
+  const baseLinks = [
     { label: 'Home', path: '/' },
     { label: 'Royal Menu', path: '/menu' },
     { label: 'Reservations', path: '/reservations' },
     { label: 'Order Tracking', path: '/orders/track' }
   ];
+
+  // Dynamic links conditionally added based on authenticated role
+  const dynamicLinks = [];
+  if (role === 'ADMIN' || role === 'MANAGER') {
+    dynamicLinks.push({ label: 'Admin Dashboard', path: '/admin', isRoleSpecific: true });
+  } else if (role === 'KITCHEN_STAFF') {
+    dynamicLinks.push({ label: 'Kitchen Display', path: '/kitchen', isRoleSpecific: true });
+  }
+
+  const allNavLinks = [...baseLinks, ...dynamicLinks];
 
   return (
     <header
@@ -32,10 +49,11 @@ const Navbar = () => {
         right: 0,
         zIndex: 900,
         backgroundColor: 'var(--bg-glass)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderBottom: '1px solid var(--border-subtle)',
-        height: '4.5rem'
+        height: '5rem',
+        boxShadow: '0 4px 24px rgba(0, 0, 0, 0.4)'
       }}
     >
       <div
@@ -47,21 +65,21 @@ const Navbar = () => {
           height: '100%'
         }}
       >
-        {/* Brand Logo & Name */}
+        {/* Brand Logo & Name: RAALAHAMI */}
         <Link
           to="/"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.65rem',
+            gap: '0.85rem',
             textDecoration: 'none'
           }}
-          aria-label="Ralahami Restaurant Home"
+          aria-label="Raalahami Restaurant Home"
         >
           <div
             style={{
-              width: '2.5rem',
-              height: '2.5rem',
+              width: '2.85rem',
+              height: '2.85rem',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, var(--accent-gold), #8A6D1F)',
               display: 'flex',
@@ -69,9 +87,10 @@ const Navbar = () => {
               justifyContent: 'center',
               color: '#0B0D11',
               fontFamily: 'var(--font-serif)',
-              fontWeight: '800',
-              fontSize: '1.25rem',
-              boxShadow: '0 0 12px rgba(212, 175, 55, 0.4)'
+              fontWeight: '900',
+              fontSize: '1.45rem',
+              boxShadow: '0 0 16px rgba(212, 175, 55, 0.45)',
+              border: '2px solid rgba(255, 244, 208, 0.4)'
             }}
           >
             R
@@ -80,23 +99,24 @@ const Navbar = () => {
             <span
               style={{
                 fontFamily: 'var(--font-serif)',
-                fontWeight: '700',
-                fontSize: '1.35rem',
-                letterSpacing: '0.04em',
+                fontWeight: '800',
+                fontSize: '1.45rem',
+                letterSpacing: '0.06em',
                 color: 'var(--text-primary)',
                 display: 'block',
                 lineHeight: 1.1
               }}
             >
-              RALAHAMI
+              RAALAHAMI
             </span>
             <span
               style={{
-                fontSize: '0.65rem',
+                fontSize: '0.68rem',
                 color: 'var(--accent-gold)',
-                letterSpacing: '0.15em',
+                letterSpacing: '0.18em',
                 textTransform: 'uppercase',
-                display: 'block'
+                display: 'block',
+                fontWeight: '600'
               }}
             >
               Royal Heritage Fine Dining
@@ -111,29 +131,63 @@ const Navbar = () => {
               display: 'flex',
               alignItems: 'center',
               listStyle: 'none',
-              gap: '1.75rem',
+              gap: '1.85rem',
               margin: 0,
               padding: 0
             }}
           >
-            {navLinks.map((link) => {
+            {allNavLinks.map((link) => {
               const isActive = location.pathname === link.path;
               return (
                 <li key={link.path}>
                   <Link
                     to={link.path}
                     aria-current={isActive ? 'page' : undefined}
+                    className="nav-link-item"
                     style={{
                       fontSize: '0.95rem',
                       fontWeight: isActive ? '700' : '500',
-                      color: isActive ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                      color: isActive
+                        ? 'var(--accent-gold)'
+                        : link.isRoleSpecific
+                        ? 'var(--accent-amber)'
+                        : 'var(--text-secondary)',
                       textDecoration: 'none',
-                      padding: '0.5rem 0.25rem',
-                      borderBottom: isActive ? '2px solid var(--accent-gold)' : '2px solid transparent',
-                      transition: 'all var(--transition-fast)'
+                      padding: '0.6rem 0.25rem',
+                      position: 'relative',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      transition: 'color var(--transition-fast)'
                     }}
                   >
+                    {link.isRoleSpecific && (
+                      <span
+                        style={{
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          backgroundColor: 'var(--accent-amber)',
+                          display: 'inline-block'
+                        }}
+                      />
+                    )}
                     {link.label}
+                    <span
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: '2px',
+                        backgroundColor: 'var(--accent-gold)',
+                        borderRadius: '2px',
+                        transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                        transformOrigin: 'center',
+                        transition: 'transform 0.25s ease-in-out'
+                      }}
+                      className="nav-indicator"
+                    />
                   </Link>
                 </li>
               );
@@ -141,35 +195,9 @@ const Navbar = () => {
           </ul>
         </nav>
 
-        {/* Action Controls: Role Switcher, Cart, Auth */}
+        {/* Right Side: Glowing Cart Pill & Auth Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Virtual Identity Role Switcher for CIS007 evaluation */}
-          <div style={{ display: 'none' }} className="role-switcher-container">
-            <label htmlFor="role-select" className="sr-only">
-              Switch Virtual User Role for Evaluation
-            </label>
-            <select
-              id="role-select"
-              value={role}
-              onChange={(e) => switchRole(e.target.value)}
-              title="Virtual Identity Role Switcher"
-              style={{
-                fontSize: '0.75rem',
-                padding: '0.35rem 0.6rem',
-                backgroundColor: 'var(--bg-secondary)',
-                color: 'var(--accent-gold)',
-                border: '1px solid var(--border-medium)',
-                borderRadius: 'var(--radius-sm)',
-                cursor: 'pointer'
-              }}
-            >
-              <option value={ROLES.CUSTOMER}>Role: Customer</option>
-              <option value={ROLES.KITCHEN_STAFF}>Role: Kitchen Staff</option>
-              <option value={ROLES.ADMIN}>Role: Admin</option>
-            </select>
-          </div>
-
-          {/* Accessible Cart Drawer Trigger */}
+          {/* Glowing Accessible Cart Drawer Trigger */}
           <button
             type="button"
             onClick={toggleDrawer}
@@ -178,20 +206,20 @@ const Navbar = () => {
               position: 'relative',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.5rem',
+              gap: '0.65rem',
               backgroundColor: 'var(--bg-surface)',
-              border: '1px solid var(--border-medium)',
+              border: '1px solid rgba(212, 175, 55, 0.4)',
               borderRadius: 'var(--radius-full)',
-              padding: '0.45rem 0.95rem',
+              padding: '0.45rem 1.15rem',
               color: 'var(--text-primary)',
               cursor: 'pointer',
-              transition: 'background-color var(--transition-fast)'
+              transition: 'all var(--transition-normal)',
+              boxShadow: totalItems > 0 ? '0 0 16px rgba(212, 175, 55, 0.25)' : 'none'
             }}
+            className="cart-nav-pill"
           >
-            <span aria-hidden="true" style={{ fontSize: '1.15rem' }}>
-              🛍️
-            </span>
-            <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>
+            <ShoppingBag size={18} style={{ color: 'var(--accent-gold)' }} />
+            <span style={{ fontWeight: '700', fontSize: '0.92rem' }}>
               {formatCurrency(totalPrice)}
             </span>
             {totalItems > 0 && (
@@ -200,14 +228,15 @@ const Navbar = () => {
                   backgroundColor: 'var(--accent-gold)',
                   color: '#0B0D11',
                   borderRadius: '50%',
-                  minWidth: '1.25rem',
-                  height: '1.25rem',
+                  minWidth: '1.35rem',
+                  height: '1.35rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '0.75rem',
-                  fontWeight: '800',
-                  padding: '0 0.2rem'
+                  fontWeight: '900',
+                  padding: '0 0.2rem',
+                  boxShadow: '0 0 8px rgba(212, 175, 55, 0.6)'
                 }}
               >
                 {totalItems}
@@ -215,12 +244,12 @@ const Navbar = () => {
             )}
           </button>
 
-          {/* User Auth Info / Login Action */}
+          {/* User Auth Info & Logout Action */}
           {isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <span
                 className="badge badge-gold"
-                title={`Signed in as ${user?.email}`}
+                title={`Signed in as ${user?.email || 'Authenticated User'}`}
                 style={{ display: 'none' }}
                 id="user-badge"
               >
@@ -230,14 +259,14 @@ const Navbar = () => {
                 variant="ghost"
                 size="sm"
                 onClick={logout}
-                ariaLabel="Log out from session"
+                ariaLabel="Sign out of current account"
               >
                 Logout
               </Button>
             </div>
           ) : (
             <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Button variant="outline" size="sm">
+              <Button variant="primary" size="sm" style={{ fontWeight: '700', padding: '0.45rem 1rem' }}>
                 Sign In
               </Button>
             </Link>
@@ -258,7 +287,7 @@ const Navbar = () => {
               border: '1px solid var(--border-medium)',
               borderRadius: 'var(--radius-sm)',
               color: 'var(--text-primary)',
-              padding: '0.5rem',
+              padding: '0.55rem',
               cursor: 'pointer'
             }}
           >
@@ -274,13 +303,14 @@ const Navbar = () => {
           style={{
             backgroundColor: 'var(--bg-surface)',
             borderBottom: '1px solid var(--border-medium)',
-            padding: '1rem',
+            padding: '1.25rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.75rem'
+            gap: '0.85rem',
+            boxShadow: 'var(--shadow-lg)'
           }}
         >
-          {navLinks.map((link) => (
+          {allNavLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -289,45 +319,61 @@ const Navbar = () => {
                 color: location.pathname === link.path ? 'var(--accent-gold)' : 'var(--text-primary)',
                 fontWeight: location.pathname === link.path ? '700' : '500',
                 padding: '0.5rem 0',
-                textDecoration: 'none'
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid var(--border-subtle)'
               }}
             >
-              {link.label}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                {link.isRoleSpecific && (
+                  <span
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--accent-amber)'
+                    }}
+                  />
+                )}
+                <span>{link.label}</span>
+              </div>
+              <ChevronRight size={16} style={{ color: 'var(--text-muted)' }} />
             </Link>
           ))}
-          <div style={{ paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
-            <label htmlFor="mobile-role-select" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Virtual Identity Role:
-            </label>
-            <select
-              id="mobile-role-select"
-              value={role}
-              onChange={(e) => switchRole(e.target.value)}
+          {isAuthenticated && (
+            <div
               style={{
-                width: '100%',
-                marginTop: '0.35rem',
-                padding: '0.5rem',
-                backgroundColor: 'var(--bg-secondary)',
-                color: 'var(--text-primary)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-medium)'
+                paddingTop: '0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
               }}
             >
-              <option value={ROLES.CUSTOMER}>Customer</option>
-              <option value={ROLES.KITCHEN_STAFF}>Kitchen Staff</option>
-              <option value={ROLES.ADMIN}>Admin</option>
-            </select>
-          </div>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Role: <strong style={{ color: 'var(--accent-gold)' }}>{role}</strong>
+              </span>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                Logout
+              </Button>
+            </div>
+          )}
         </nav>
       )}
 
-      {/* Responsive Breakpoint CSS */}
+      {/* Responsive Breakpoint CSS & Underline Animation */}
       <style>{`
-        @media (min-width: 768px) {
+        .nav-link-item:hover .nav-indicator {
+          transform: scaleX(1) !important;
+        }
+        .cart-nav-pill:hover {
+          background-color: var(--bg-surface-elevated) !important;
+          border-color: var(--accent-gold) !important;
+          box-shadow: 0 0 20px rgba(212, 175, 55, 0.4) !important;
+        }
+        @media (min-width: 820px) {
           .desktop-nav {
-            display: block !important;
-          }
-          .role-switcher-container {
             display: block !important;
           }
           #user-badge {

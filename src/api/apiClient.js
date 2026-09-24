@@ -1,5 +1,5 @@
 /**
- * Ralahami Restaurant - Core API Client
+ * Raalahami Restaurant - Core API Client
  * RESTful JSON Client over native fetch() API
  * Fully decoupled presentation tier communicating with Backend API.
  */
@@ -30,16 +30,21 @@ export class ApiError extends Error {
 export async function request(endpoint, options = {}) {
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
 
+  const token = typeof localStorage !== 'undefined'
+    ? (localStorage.getItem('ralahami_auth_token') || localStorage.getItem('token'))
+    : null;
+
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
 
   const config = {
     method: options.method || 'GET',
     headers,
-    // Essential for Virtual Identity session management via HttpOnly cookies
+    // Essential for session management via HttpOnly cookies and credentials
     credentials: 'include',
     ...options
   };

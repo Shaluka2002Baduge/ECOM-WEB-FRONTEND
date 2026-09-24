@@ -1,5 +1,5 @@
 /**
- * Ralahami Restaurant - Order Service
+ * Raalahami Restaurant - Order Service
  * Handles order placement, history, and real-time status tracking
  */
 import apiClient from '../api/apiClient';
@@ -16,7 +16,7 @@ export const orderService = {
     } catch (e) {
       // Create local tracked order session for smooth presentation workflow
       const mockOrder = {
-        id: 'RALAHAMI-' + Math.floor(100000 + Math.random() * 900000),
+        id: 'RAALAHAMI-' + Math.floor(100000 + Math.random() * 900000),
         createdAt: new Date().toISOString(),
         status: 'PLACED',
         estimatedMinutes: 35,

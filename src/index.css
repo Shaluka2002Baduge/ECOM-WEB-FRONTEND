@@ -1,41 +1,43 @@
 /* ==========================================================================
-   Ralahami Restaurant - Accessible Design System & Base CSS
-   WCAG 2.1 AA/AAA Compliant | High Contrast | Modern Glassmorphism
+   Raalahami Restaurant - Sri Lankan Royal Heritage Design System
+   WCAG 2.1 AA/AAA Compliant | High Contrast | Modern Glassmorphism & Gold
    ========================================================================== */
 
 :root {
-  /* Color Palette - Royal Sri Lankan Culinary Palette */
-  --bg-primary: #0B0D11;
-  --bg-secondary: #12151D;
-  --bg-surface: #1A1E29;
-  --bg-surface-elevated: #232938;
-  --bg-glass: rgba(18, 21, 29, 0.82);
-  --bg-overlay: rgba(5, 7, 10, 0.75);
+  /* Color Palette - Deep Obsidian & Ceylon Royal Gold */
+  --bg-primary: #0B0F19;
+  --bg-secondary: #111726;
+  --bg-surface: #171E30;
+  --bg-surface-elevated: #1F2840;
+  --bg-glass: rgba(11, 15, 25, 0.85);
+  --bg-overlay: rgba(7, 10, 18, 0.82);
 
-  --border-subtle: #2A3042;
-  --border-medium: #3E465E;
-  --border-focus: #F59E0B;
+  --border-subtle: #242D42;
+  --border-medium: #3A4765;
+  --border-focus: #E5A93C;
 
   /* Typography Colors (Minimum 4.5:1 contrast against dark backgrounds) */
-  --text-primary: #F8FAFC;      /* Contrast: ~16:1 against #0B0D11 */
-  --text-secondary: #E2E8F0;    /* Contrast: ~12:1 against #0B0D11 */
-  --text-muted: #94A3B8;        /* Contrast: ~5.2:1 against #0B0D11 */
+  --text-primary: #F8FAFC;      /* Contrast ~16:1 against #0B0F19 */
+  --text-secondary: #E2E8F0;    /* Contrast ~12:1 against #0B0F19 */
+  --text-muted: #94A3B8;        /* Contrast ~5.2:1 against #0B0F19 */
   --text-inverse: #0B0D11;
 
   /* Royal Spices & Accents */
   --accent-gold: #D4AF37;
-  --accent-gold-hover: #E5BE48;
+  --accent-gold-hover: #E5C358;
   --accent-gold-muted: rgba(212, 175, 55, 0.15);
-  --accent-amber: #F59E0B;
+  --accent-amber: #E5A93C;
+  --accent-amber-hover: #F5BA4E;
+  --accent-amber-muted: rgba(229, 169, 60, 0.15);
   --accent-emerald: #10B981;
   --accent-emerald-muted: rgba(16, 185, 129, 0.15);
   --accent-danger: #EF4444;
   --accent-danger-muted: rgba(239, 68, 68, 0.15);
-  --accent-info: #3B82F6;
+  --accent-info: #38BDF8;
 
   /* Typography */
-  --font-serif: 'Cinzel', serif, Georgia;
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Cinzel', 'Playfair Display', Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', 'Outfit', system-ui, -apple-system, sans-serif;
 
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -46,20 +48,23 @@
   --spacing-2xl: 3rem;
 
   /* Border Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
 
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
-  --shadow-glow: 0 0 20px rgba(212, 175, 55, 0.25);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.6);
+  --shadow-glow-gold: 0 0 24px rgba(212, 175, 55, 0.28);
+  --shadow-glow-amber: 0 0 24px rgba(229, 169, 60, 0.25);
 
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.25s ease-in-out;
+  --transition-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Base Reset & Box Sizing */
@@ -84,9 +89,12 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 10% 20%, rgba(212, 175, 55, 0.04) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.03) 0%, transparent 40%),
-              var(--bg-primary);
+  background-color: var(--bg-primary);
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(229, 169, 60, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(212, 175, 55, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(17, 23, 38, 0.5) 0%, transparent 100%);
+  background-attachment: fixed;
 }
 
 #root {
@@ -106,15 +114,15 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* Skip link to jump directly to main content for screen readers / keyboards */
+/* Skip link to jump directly to main content */
 .skip-link {
   position: absolute;
   top: -100px;
   left: 1rem;
   z-index: 9999;
-  background-color: var(--accent-gold);
+  background: linear-gradient(135deg, var(--accent-gold), #8A6D1F);
   color: #000000;
-  font-weight: 700;
+  font-weight: 800;
   padding: 0.75rem 1.25rem;
   border-radius: var(--radius-sm);
   text-decoration: none;
@@ -162,8 +170,8 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.25;
 }
 
-h1 { font-size: clamp(2rem, 5vw, 3.25rem); }
-h2 { font-size: clamp(1.5rem, 3.5vw, 2.25rem); }
+h1 { font-size: clamp(2.25rem, 5vw, 3.5rem); }
+h2 { font-size: clamp(1.75rem, 3.5vw, 2.5rem); }
 h3 { font-size: 1.5rem; }
 h4 { font-size: 1.25rem; }
 
@@ -180,7 +188,20 @@ a {
 
 a:hover {
   color: var(--accent-gold-hover);
-  text-decoration: underline;
+  text-decoration: none;
+}
+
+/* Luxury Gold & Amber Gradient Text */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #FFF4D0 0%, #D4AF37 50%, #B88909 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-amber {
+  background: linear-gradient(135deg, #FFE8B0 0%, #E5A93C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* Main Container Layout */
@@ -201,10 +222,25 @@ a:hover {
 /* Glassmorphism Panel Utility */
 .glass-panel {
   background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Luxury Interactive Card */
+.luxury-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+}
+
+.luxury-card:hover {
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow-gold);
 }
 
 /* Badge Utilities */
@@ -214,7 +250,7 @@ a:hover {
   gap: 0.35rem;
   padding: 0.25rem 0.65rem;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-radius: var(--radius-full);
@@ -223,27 +259,51 @@ a:hover {
 .badge-gold {
   background-color: var(--accent-gold-muted);
   color: var(--accent-gold);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.badge-amber {
+  background-color: var(--accent-amber-muted);
+  color: var(--accent-amber);
+  border: 1px solid rgba(229, 169, 60, 0.35);
 }
 
 .badge-emerald {
   background-color: var(--accent-emerald-muted);
   color: var(--accent-emerald);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .badge-danger {
   background-color: var(--accent-danger-muted);
   color: var(--accent-danger);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+/* Glow Effects */
+.glow-gold {
+  box-shadow: var(--shadow-glow-gold);
+}
+
+.glow-amber {
+  box-shadow: var(--shadow-glow-amber);
 }
 
 /* Animation Utilities */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
 }
 
 .fade-in {
   animation: fadeIn var(--transition-normal) forwards;
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
 }

@@ -1,5 +1,5 @@
 /**
- * Ralahami Restaurant - CartContext
+ * Raalahami Restaurant - CartContext
  * Global shopping cart state with accessible live announcements & drawer control
  */
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';

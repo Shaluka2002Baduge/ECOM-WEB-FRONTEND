@@ -1,10 +1,11 @@
 import React from 'react';
+import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '../../utils/currency';
 
 /**
- * Accessible CartItem Component
- * Keyboard navigable quantity controls with explicit ARIA labels
+ * Accessible Raalahami CartItem Component
+ * Ultra-Luxury mini-card design with smooth quantity controls
  */
 export const CartItem = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
@@ -21,16 +22,19 @@ export const CartItem = ({ item }) => {
     removeItem(item.id, item.specialInstructions);
   };
 
-  const lineTotal = (item.price * item.quantity).toFixed(2);
-
   return (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.85rem',
-        padding: '0.85rem 0',
-        borderBottom: '1px solid var(--border-subtle)'
+        gap: '0.95rem',
+        padding: '0.9rem',
+        marginBottom: '0.85rem',
+        borderRadius: 'var(--radius-md)',
+        backgroundColor: 'var(--bg-surface)',
+        border: '1px solid rgba(229, 169, 60, 0.18)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+        transition: 'border-color var(--transition-fast)'
       }}
     >
       {/* Item Image or Fallback */}
@@ -39,11 +43,13 @@ export const CartItem = ({ item }) => {
         alt=""
         aria-hidden="true"
         style={{
-          width: '54px',
-          height: '54px',
-          borderRadius: 'var(--radius-md)',
+          width: '58px',
+          height: '58px',
+          borderRadius: 'var(--radius-sm)',
           objectFit: 'cover',
-          backgroundColor: 'var(--bg-secondary)'
+          backgroundColor: 'var(--bg-secondary)',
+          border: '1px solid var(--border-subtle)',
+          flexShrink: 0
         }}
         onError={(e) => {
           e.currentTarget.style.display = 'none';
@@ -52,14 +58,35 @@ export const CartItem = ({ item }) => {
 
       {/* Details */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <h4 style={{ fontSize: '0.95rem', margin: 0, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <h4
+          style={{
+            fontSize: '0.95rem',
+            margin: 0,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-serif)',
+            fontWeight: '600',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
           {item.name}
         </h4>
-        <span style={{ fontSize: '0.825rem', color: 'var(--accent-gold)', fontWeight: '600' }}>
+        <span style={{ fontSize: '0.825rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
           {formatCurrency(item.price)} each
         </span>
         {item.specialInstructions && (
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0', fontStyle: 'italic' }}>
+          <p
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--accent-amber)',
+              margin: '0.2rem 0 0 0',
+              fontStyle: 'italic',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}
+          >
             Note: {item.specialInstructions}
           </p>
         )}
@@ -70,11 +97,11 @@ export const CartItem = ({ item }) => {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.35rem',
+          gap: '0.25rem',
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-medium)',
           borderRadius: 'var(--radius-sm)',
-          padding: '0.2rem'
+          padding: '0.15rem'
         }}
       >
         <button
@@ -84,18 +111,18 @@ export const CartItem = ({ item }) => {
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--text-primary)',
-            width: '1.75rem',
-            height: '1.75rem',
+            color: 'var(--text-secondary)',
+            width: '1.65rem',
+            height: '1.65rem',
             cursor: 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            borderRadius: '4px',
+            transition: 'background var(--transition-fast)'
           }}
         >
-          −
+          <Minus size={13} />
         </button>
         <span
           aria-label={`Quantity: ${item.quantity}`}
@@ -116,24 +143,39 @@ export const CartItem = ({ item }) => {
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--text-primary)',
-            width: '1.75rem',
-            height: '1.75rem',
+            color: 'var(--text-secondary)',
+            width: '1.65rem',
+            height: '1.65rem',
             cursor: 'pointer',
-            fontSize: '1rem',
-            fontWeight: 'bold',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            borderRadius: '4px',
+            transition: 'background var(--transition-fast)'
           }}
         >
-          +
+          <Plus size={13} />
         </button>
       </div>
 
       {/* Line Total & Remove */}
-      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-        <span style={{ fontWeight: '700', fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+      <div
+        style={{
+          textAlign: 'right',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '0.25rem',
+          minWidth: '65px'
+        }}
+      >
+        <span
+          style={{
+            fontWeight: '800',
+            fontSize: '0.95rem',
+            color: 'var(--accent-gold)'
+          }}
+        >
           {formatCurrency(item.price * item.quantity)}
         </span>
         <button
@@ -143,13 +185,24 @@ export const CartItem = ({ item }) => {
           style={{
             background: 'none',
             border: 'none',
-            color: 'var(--accent-danger)',
-            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
             cursor: 'pointer',
-            textDecoration: 'underline'
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.2rem',
+            fontSize: '0.72rem',
+            padding: '0.1rem 0.2rem',
+            borderRadius: 'var(--radius-sm)',
+            transition: 'color var(--transition-fast)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = 'var(--accent-danger)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = 'var(--text-muted)';
           }}
         >
-          Remove
+          <Trash2 size={12} />
         </button>
       </div>
     </div>

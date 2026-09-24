@@ -38,18 +38,26 @@ export const RegisterPage = () => {
     }
 
     try {
-      const res = await register({
-        name: formData.name,
+      const payload = {
+        displayName: formData.fullName || formData.name || formData.displayName,
         email: formData.email,
-        phone: formData.phone,
         password: formData.password
-      });
+      };
 
-      if (res.success) {
-        navigate('/menu');
+      const res = await register(payload);
+
+      if (res && res.success) {
+        navigate('/login', {
+          state: {
+            successMessage:
+              'Account created successfully! Please sign in with your credentials to continue.',
+            prefillEmail: formData.email
+          },
+          replace: true
+        });
       }
     } catch (err) {
-      setLocalError(err.message || 'Registration failed');
+      setLocalError(err.message || 'Registration failed. Please try again.');
     }
   };
 
@@ -57,11 +65,11 @@ export const RegisterPage = () => {
     <div className="register-page fade-in" style={{ padding: '4rem 1rem 6rem 1rem', display: 'flex', justifyContent: 'center' }}>
       <div className="glass-panel" style={{ width: '100%', maxWidth: '520px', padding: '2.5rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '1.75rem', marginBottom: '0.4rem', color: 'var(--accent-gold)' }}>
-            Join the Royal Court
+          <h1 style={{ fontSize: '1.85rem', marginBottom: '0.4rem' }}>
+            <span className="text-gradient-gold">Join the Royal Court</span>
           </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-            Register your patron profile for effortless table reservations and dining privileges.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
+            Register your patron profile for effortless table reservations and dining privileges at Raalahami.
           </p>
         </div>
 

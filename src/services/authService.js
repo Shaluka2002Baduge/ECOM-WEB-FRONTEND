@@ -1,6 +1,6 @@
 /**
- * Ralahami Restaurant - Auth Service
- * Virtual Identity & Session Management
+ * Raalahami Restaurant - Auth Service
+ * Dynamic RBAC Authentication & Session Management
  */
 import apiClient from '../api/apiClient';
 

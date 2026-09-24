@@ -5,14 +5,12 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0', // Bind to both IPv4 (127.0.0.1) and IPv6 (::1)
+    host: true, // Exposes on localhost (127.0.0.1 and ::1) and local network
     port: 3000,
-    strictPort: true,
     open: false
   },
   preview: {
-    host: '0.0.0.0',
-    port: 3000,
-    strictPort: true
+    host: true,
+    port: 3000
   }
 });

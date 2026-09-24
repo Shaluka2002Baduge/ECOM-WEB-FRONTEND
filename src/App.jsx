@@ -1,9 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import SkipLink from './components/common/SkipLink';
-import Navbar from './components/common/Navbar';
-import Footer from './components/common/Footer';
-import CartDrawer from './components/cart/CartDrawer';
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+// Layouts
+import CustomerLayout from './layouts/CustomerLayout';
+import AdminLayout from './layouts/AdminLayout';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -13,43 +14,68 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import KitchenDashboard from './pages/KitchenDashboard';
 
 /**
- * Root Application Component
- * Structured with strict WCAG 2.1 Landmark roles:
- * - <header role="banner"> (inside Navbar)
- * - <main id="main-content" role="main">
- * - <footer role="contentinfo"> (inside Footer)
+ * Root Application Router
+ * Strict architectural separation:
+ * 1. CustomerLayout: Public storefront with Navbar, Footer, and Cart Drawer.
+ * 2. AdminLayout: Dedicated full-height SaaS layout with dark luxury sidebar, custom header, and no customer chrome.
+ * 3. KitchenDashboard: Dedicated full-screen KDS ticket terminal.
  */
 function App() {
   return (
-    <>
-      {/* WCAG 2.1 Skip Link (Bypass Blocks 2.4.1) */}
-      <SkipLink targetId="main-content" />
+    <Routes>
+      {/* 1. Public Customer Routes (Rendered inside CustomerLayout) */}
+      <Route element={<CustomerLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/reservations" element={<ReservationPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders/track" element={<OrderTrackingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+      </Route>
 
-      {/* Accessible Fixed Navbar */}
-      <Navbar />
+      {/* 2. Dedicated SaaS Admin Portal (Completely separated from customer layout) */}
+      <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Primary Main Content Landmark */}
-      <main id="main-content" className="main-content" role="main" tabIndex="-1">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/menu" element={<MenuPage />} />
-          <Route path="/reservations" element={<ReservationPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/orders/track" element={<OrderTrackingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
+      {/* 3. Dedicated Kitchen Display Screen (KDS/KOT) */}
+      <Route
+        path="/kitchen/*"
+        element={
+          <ProtectedRoute allowedRoles={['KITCHEN_STAFF', 'ADMIN']}>
+            <KitchenDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/kitchen"
+        element={
+          <ProtectedRoute allowedRoles={['KITCHEN_STAFF', 'ADMIN']}>
+            <KitchenDashboard />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Slide-out Accessible Cart Drawer */}
-      <CartDrawer />
-
-      {/* Accessible Footer */}
-      <Footer />
-    </>
+      {/* Wildcard Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

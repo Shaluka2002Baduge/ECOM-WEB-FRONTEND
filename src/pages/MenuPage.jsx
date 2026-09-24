@@ -58,11 +58,13 @@ export const MenuPage = () => {
         {/* Page Header */}
         <div style={{ marginBottom: '2.5rem' }}>
           <span className="badge badge-gold" style={{ marginBottom: '0.5rem' }}>
-            Culinary Offerings
+            ✦ Royal Culinary Offerings
           </span>
-          <h1 style={{ marginBottom: '0.75rem' }}>Royal A La Carte Menu</h1>
-          <p style={{ color: 'var(--text-muted)', maxWidth: '680px', margin: 0 }}>
-            Indulge in time-honored recipes simmered in stone claypots and seasoned with authentic Ceylon spices.
+          <h1 style={{ marginBottom: '0.75rem', fontSize: 'clamp(2rem, 4vw, 2.75rem)' }}>
+            <span className="text-gradient-gold">Royal A La Carte Menu</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', maxWidth: '680px', margin: 0, fontSize: '1.05rem', lineHeight: '1.6' }}>
+            Indulge in time-honored recipes simmered in stone claypots and seasoned with authentic Ceylon spices at Raalahami.
           </p>
         </div>
 

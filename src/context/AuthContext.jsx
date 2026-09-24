@@ -1,7 +1,7 @@
 /**
- * Ralahami Restaurant - AuthContext
- * Virtual Identity & Role Management (CUSTOMER, KITCHEN_STAFF, ADMIN)
- * Compliant with 3-Tier Architecture & Virtual Identity security principles
+ * Raalahami Restaurant - AuthContext
+ * Dynamic Role-Based Authentication & Session Management
+ * Roles: CUSTOMER, KITCHEN_STAFF, ADMIN, MANAGER
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import authService from '../services/authService';
@@ -12,13 +12,14 @@ export const ROLES = {
   GUEST: 'GUEST',
   CUSTOMER: 'CUSTOMER',
   KITCHEN_STAFF: 'KITCHEN_STAFF',
-  ADMIN: 'ADMIN'
+  ADMIN: 'ADMIN',
+  MANAGER: 'MANAGER'
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('ralahami_virtual_user');
+      const stored = localStorage.getItem('ralahami_auth_user') || localStorage.getItem('ralahami_virtual_user');
       return stored ? JSON.parse(stored) : null;
     } catch {
       return null;
@@ -28,75 +29,91 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Sync to session/local storage for virtual identity continuity without storing secrets
+  // Sync authenticated user to localStorage
   useEffect(() => {
     if (user) {
-      localStorage.setItem('ralahami_virtual_user', JSON.stringify(user));
-    } else {
+      localStorage.setItem('ralahami_auth_user', JSON.stringify(user));
+      // Cleanup legacy virtual user key if present
       localStorage.removeItem('ralahami_virtual_user');
+    } else {
+      localStorage.removeItem('ralahami_auth_user');
     }
   }, [user]);
 
   /**
-   * Log in user
+   * Log in user via backend API
+   * @param {string} email
+   * @param {string} password
    */
   const login = useCallback(async (email, password) => {
     setIsLoading(true);
     setError(null);
     try {
       const response = await authService.login({ email, password });
-      const userData = response.user || {
-        id: 'u-' + Date.now(),
-        name: email.split('@')[0],
-        email,
-        role: ROLES.CUSTOMER
+      
+      // Support standard backend response structures
+      const data = response?.data || response;
+      const userData = data?.user || (data?.email ? data : null);
+      const token = data?.token || data?.accessToken || response?.token;
+
+      if (!userData) {
+        throw new Error('Authentication response did not contain user data.');
+      }
+
+      const rawRole = userData.role || data.role || ROLES.CUSTOMER;
+      const normalizedRole = String(rawRole).trim().toUpperCase();
+
+      const authenticatedUser = {
+        ...userData,
+        role: normalizedRole
       };
-      setUser(userData);
-      return { success: true, user: userData };
+
+      if (token) {
+        localStorage.setItem('ralahami_auth_token', token);
+      }
+      localStorage.setItem('ralahami_auth_user', JSON.stringify(authenticatedUser));
+      localStorage.removeItem('ralahami_virtual_user');
+
+      setUser(authenticatedUser);
+      return { success: true, user: authenticatedUser };
     } catch (err) {
-      // In demo/offline mode, permit virtual identity login with proper feedback
-      const fallbackUser = {
-        id: 'virt-' + Date.now(),
-        name: email.includes('@') ? email.split('@')[0].toUpperCase() : 'Valued Patron',
-        email,
-        role: email.includes('admin')
-          ? ROLES.ADMIN
-          : email.includes('kitchen')
-          ? ROLES.KITCHEN_STAFF
-          : ROLES.CUSTOMER
-      };
-      setUser(fallbackUser);
-      return { success: true, user: fallbackUser, isVirtual: true };
+      const message = err.message || 'Authentication failed. Please verify your credentials.';
+      setError(message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   /**
-   * Register new user
+   * Register new customer user via backend API
+   * Strictly creates the account without auto-authenticating or saving session tokens.
    */
   const register = useCallback(async (userData) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await authService.register(userData);
-      const newUser = response.user || {
-        id: 'u-' + Date.now(),
-        name: userData.name,
+      const payload = {
+        displayName: userData.displayName || userData.fullName || userData.name,
         email: userData.email,
-        role: ROLES.CUSTOMER
+        password: userData.password,
+        ...(userData.phone ? { phone: userData.phone } : {})
       };
-      setUser(newUser);
-      return { success: true, user: newUser };
+
+      const response = await authService.register(payload);
+
+      // Explicit authentication required: Do NOT save token or set user session
+      return {
+        success: true,
+        message:
+          response?.message ||
+          'Account created successfully! Please sign in with your credentials to continue.',
+        email: payload.email
+      };
     } catch (err) {
-      const fallbackUser = {
-        id: 'virt-' + Date.now(),
-        name: userData.name,
-        email: userData.email,
-        role: ROLES.CUSTOMER
-      };
-      setUser(fallbackUser);
-      return { success: true, user: fallbackUser, isVirtual: true };
+      const message = err.message || 'Registration failed. Please try again.';
+      setError(message);
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -109,23 +126,20 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       await authService.logout();
+    } catch (err) {
+      console.warn('Logout network notice:', err.message);
     } finally {
+      localStorage.removeItem('ralahami_auth_user');
+      localStorage.removeItem('ralahami_auth_token');
+      localStorage.removeItem('ralahami_virtual_user');
+      localStorage.removeItem('token');
       setUser(null);
       setError(null);
       setIsLoading(false);
     }
   }, []);
 
-  /**
-   * Quick role switch for prototype inspection and testing
-   */
-  const switchRole = useCallback((newRole) => {
-    if (Object.values(ROLES).includes(newRole)) {
-      setUser((prev) => (prev ? { ...prev, role: newRole } : { id: 'virt-demo', name: 'Demo User', email: 'demo@ralahami.lk', role: newRole }));
-    }
-  }, []);
-
-  const currentRole = user?.role || ROLES.GUEST;
+  const currentRole = user?.role ? String(user.role).trim().toUpperCase() : ROLES.GUEST;
   const isAuthenticated = !!user;
 
   const value = {
@@ -137,11 +151,11 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    switchRole,
     clearError: () => setError(null),
     isCustomer: currentRole === ROLES.CUSTOMER,
     isKitchenStaff: currentRole === ROLES.KITCHEN_STAFF,
-    isAdmin: currentRole === ROLES.ADMIN
+    isAdmin: currentRole === ROLES.ADMIN || currentRole === ROLES.MANAGER,
+    isManager: currentRole === ROLES.MANAGER
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
