@@ -208,14 +208,15 @@ export const ForgotPasswordModal = ({ isOpen, onClose, onPasswordResetSuccess, i
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'var(--bg-overlay)',
+        backgroundColor: 'rgba(0, 0, 0, 0.82)',
         backdropFilter: 'blur(10px)',
         WebkitBackdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1100,
-        padding: '1.25rem'
+        padding: '0.75rem',
+        overflowY: 'auto'
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -230,12 +231,15 @@ export const ForgotPasswordModal = ({ isOpen, onClose, onPasswordResetSuccess, i
         style={{
           width: '100%',
           maxWidth: '480px',
+          maxHeight: 'min(92dvh, 90vh)',
+          overflowY: 'auto',
           backgroundColor: 'var(--bg-surface)',
           border: '1px solid var(--border-medium)',
           borderRadius: 'var(--radius-xl)',
-          padding: '2.25rem',
+          padding: '2rem 1.5rem',
           boxShadow: 'var(--shadow-lg), var(--shadow-glow-gold)',
-          position: 'relative'
+          position: 'relative',
+          margin: 'auto'
         }}
       >
         {/* Close Button */}

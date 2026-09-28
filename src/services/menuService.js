@@ -87,43 +87,96 @@ export const FALLBACK_MENU_ITEMS = [
 ];
 
 /**
+/**
+ * Category names map by numeric ID
+ */
+const CATEGORY_NAMES_BY_ID = {
+  1: 'Mains',
+  2: 'Seafood',
+  3: 'Starters',
+  4: 'Vegetarian',
+  5: 'Desserts'
+};
+
+/**
  * Normalizes backend dish payload into standard frontend format
  */
 function normalizeMenuItem(item) {
-  const dietaryList = Array.isArray(item.dietary) ? [...item.dietary] : [];
+  if (!item) return null;
+
+  const dietaryList = Array.isArray(item.dietary)
+    ? [...item.dietary]
+    : Array.isArray(item.dietary_tags)
+    ? [...item.dietary_tags]
+    : typeof item.dietary === 'string'
+    ? item.dietary.split(',').map((s) => s.trim()).filter(Boolean)
+    : typeof item.dietary_tags === 'string'
+    ? item.dietary_tags.split(',').map((s) => s.trim()).filter(Boolean)
+    : [];
+
   if (item.is_vegan && !dietaryList.includes('Vegan')) dietaryList.push('Vegan');
   if (item.is_halal && !dietaryList.includes('Halal')) dietaryList.push('Halal');
   if (item.is_gluten_free && !dietaryList.includes('Gluten-Free')) dietaryList.push('Gluten-Free');
 
-  // Normalize category name
-  const rawCat = item.category || item.category_name || 'Mains';
-  let cleanCategory = rawCat;
-  if (rawCat.toLowerCase().includes('starter')) cleanCategory = 'Starters';
-  else if (rawCat.toLowerCase().includes('seafood') || rawCat.toLowerCase().includes('crab') || rawCat.toLowerCase().includes('fish')) cleanCategory = 'Seafood';
-  else if (rawCat.toLowerCase().includes('dessert') || rawCat.toLowerCase().includes('sweet')) cleanCategory = 'Desserts';
-  else if (rawCat.toLowerCase().includes('veg')) cleanCategory = 'Vegetarian';
-  else if (rawCat.toLowerCase().includes('main') || rawCat.toLowerCase().includes('curry') || rawCat.toLowerCase().includes('rice')) cleanCategory = 'Mains';
+  // Normalize category name safely
+  let rawCat = '';
+  if (typeof item.category === 'string') {
+    rawCat = item.category;
+  } else if (item.category && typeof item.category === 'object' && item.category.name) {
+    rawCat = item.category.name;
+  } else if (typeof item.category_name === 'string') {
+    rawCat = item.category_name;
+  } else if (item.category_id && CATEGORY_NAMES_BY_ID[Number(item.category_id)]) {
+    rawCat = CATEGORY_NAMES_BY_ID[Number(item.category_id)];
+  } else if (typeof item.category === 'number' && CATEGORY_NAMES_BY_ID[item.category]) {
+    rawCat = CATEGORY_NAMES_BY_ID[item.category];
+  } else {
+    rawCat = 'Mains';
+  }
+
+  const rawCatStr = String(rawCat || 'Mains');
+  let cleanCategory = rawCatStr;
+  const lowerCat = rawCatStr.toLowerCase();
+  if (lowerCat.includes('starter')) cleanCategory = 'Starters';
+  else if (lowerCat.includes('seafood') || lowerCat.includes('crab') || lowerCat.includes('fish') || lowerCat.includes('prawn')) cleanCategory = 'Seafood';
+  else if (lowerCat.includes('dessert') || lowerCat.includes('sweet')) cleanCategory = 'Desserts';
+  else if (lowerCat.includes('veg')) cleanCategory = 'Vegetarian';
+  else if (lowerCat.includes('main') || lowerCat.includes('curry') || lowerCat.includes('rice') || lowerCat.includes('lamprais') || lowerCat.includes('kottu')) cleanCategory = 'Mains';
 
   const resolvedId = item.id ?? item.menu_item_id ?? item.menuItemId ?? item._id;
+
+  const resolvedImage =
+    item.image_url ||
+    item.imageUrl ||
+    item.image ||
+    'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80';
+
+  const resolvedAvailable = item.is_available ?? item.available ?? (item.status ? item.status === 'Available' : true);
+  const resolvedSpice = item.spice_level !== undefined ? Number(item.spice_level) : (item.spiceLevel !== undefined ? Number(item.spiceLevel) : 0);
+  const resolvedCatId = item.category_id !== undefined ? Number(item.category_id) : (typeof item.category === 'number' ? item.category : 1);
 
   return {
     id: resolvedId,
     menu_item_id: resolvedId,
     menuItemId: resolvedId,
-    name: item.name,
+    name: item.name || '',
     category: cleanCategory,
-    originalCategory: rawCat,
+    category_id: isNaN(resolvedCatId) ? 1 : resolvedCatId,
+    originalCategory: rawCatStr,
     description: item.description || '',
     price: typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price || 0),
-    imageUrl:
-      item.imageUrl ||
-      item.image_url ||
-      'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80',
-    spiceLevel: item.spiceLevel ?? item.spice_level ?? 2,
+    imageUrl: resolvedImage,
+    image_url: resolvedImage,
+    image: resolvedImage,
+    spiceLevel: resolvedSpice,
+    spice_level: resolvedSpice,
     dietary: dietaryList.length > 0 ? dietaryList : ['Chef Special'],
+    dietary_tags: dietaryList.length > 0 ? dietaryList : ['Chef Special'],
     calories: item.calories || 550,
     preparationTime: item.preparationTime || item.preparation_time || '20-25 mins',
-    available: item.available ?? item.is_available ?? true
+    available: resolvedAvailable,
+    is_available: resolvedAvailable,
+    status: resolvedAvailable ? 'Available' : 'Unavailable'
   };
 }
 
@@ -161,10 +214,20 @@ export const menuService = {
       ? rawData.data
       : Array.isArray(rawData?.items)
       ? rawData.items
+      : Array.isArray(rawData?.menu)
+      ? rawData.menu
+      : Array.isArray(rawData?.menuItems)
+      ? rawData.menuItems
+      : Array.isArray(rawData?.data?.items)
+      ? rawData.data.items
+      : Array.isArray(rawData?.data?.menu)
+      ? rawData.data.menu
+      : Array.isArray(rawData?.data?.menuItems)
+      ? rawData.data.menuItems
       : null;
 
-    if (items && items.length > 0) {
-      let mapped = items.map(normalizeMenuItem);
+    if (items && Array.isArray(items) && items.length > 0) {
+      let mapped = items.map(normalizeMenuItem).filter(Boolean);
 
       if (category && category !== 'All') {
         mapped = mapped.filter(
@@ -249,7 +312,59 @@ export const menuService = {
       }
     }
     return ['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts'];
+  },
+
+  /**
+   * Update existing menu item with image, pricing, and details
+   */
+  async updateMenuItem(id, updatePayload) {
+    try {
+      const response = await apiClient.put(`/menu/${id}`, updatePayload);
+      const rawData = response?.data?.data || response?.data;
+      return rawData ? normalizeMenuItem(rawData) : updatePayload;
+    } catch (e) {
+      try {
+        const altResponse = await apiClient.put(`/menu-items/${id}`, updatePayload);
+        const rawData = altResponse?.data?.data || altResponse?.data;
+        return rawData ? normalizeMenuItem(rawData) : updatePayload;
+      } catch (altErr) {
+        console.warn('Backend update failed, using client-side payload:', altErr.message);
+        return updatePayload;
+      }
+    }
+  },
+
+  /**
+   * Create new menu item
+   */
+  async createMenuItem(dishPayload) {
+    try {
+      const response = await apiClient.post('/menu', dishPayload);
+      const rawData = response?.data?.data || response?.data;
+      return rawData ? normalizeMenuItem(rawData) : dishPayload;
+    } catch (e) {
+      try {
+        const altResponse = await apiClient.post('/menu-items', dishPayload);
+        const rawData = altResponse?.data?.data || altResponse?.data;
+        return rawData ? normalizeMenuItem(rawData) : dishPayload;
+      } catch (altErr) {
+        console.warn('Backend create failed, using client-side payload:', altErr.message);
+        return dishPayload;
+      }
+    }
+  },
+
+  /**
+   * Delete menu item
+   */
+  async deleteMenuItem(id) {
+    try {
+      return await apiClient.delete(`/menu/${id}`);
+    } catch (e) {
+      return await apiClient.delete(`/menu-items/${id}`);
+    }
   }
 };
 
 export default menuService;
+

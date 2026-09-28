@@ -147,15 +147,8 @@ export const HomePage = () => {
                   </Button>
                 </Link>
 
-                <Link to="/reservations" style={{ textDecoration: 'none' }}>
-                  <Button variant="outline" size="lg" ariaLabel="Reserve a table for your party">
-                    <Calendar size={18} style={{ marginRight: '0.5rem' }} />
-                    Reserve a Table
-                  </Button>
-                </Link>
-
                 <Link to="/orders/track" style={{ textDecoration: 'none' }}>
-                  <Button variant="ghost" size="lg" ariaLabel="Track an ongoing delivery">
+                  <Button variant="outline" size="lg" ariaLabel="Track an ongoing delivery">
                     <Compass size={18} style={{ marginRight: '0.5rem' }} />
                     Track Delivery
                   </Button>

@@ -26,7 +26,6 @@ const Navbar = () => {
   const baseLinks = [
     { label: 'Home', path: '/' },
     { label: 'Royal Menu', path: '/menu' },
-    { label: 'Reservations', path: '/reservations' },
     { label: 'Order Tracking', path: '/orders/track' }
   ];
 

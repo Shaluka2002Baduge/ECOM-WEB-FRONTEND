@@ -9,7 +9,6 @@ import AdminLayout from './layouts/AdminLayout';
 // Pages
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
-import ReservationPage from './pages/ReservationPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import LoginPage from './pages/LoginPage';
@@ -30,7 +29,8 @@ function App() {
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/menu" element={<MenuPage />} />
-        <Route path="/reservations" element={<ReservationPage />} />
+        <Route path="/reservations" element={<Navigate to="/menu" replace />} />
+        <Route path="/reservation" element={<Navigate to="/menu" replace />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/track" element={<OrderTrackingPage />} />
         <Route path="/login" element={<LoginPage />} />

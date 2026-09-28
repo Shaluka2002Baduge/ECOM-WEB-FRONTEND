@@ -89,11 +89,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/reservations" style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-                  Table Reservations
-                </Link>
-              </li>
-              <li>
                 <Link to="/orders/track" style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
                   Live Order Tracker
                 </Link>
@@ -157,7 +152,7 @@ const Footer = () => {
             <Link to="/menu" style={{ color: 'var(--text-muted)' }}>
               Menu Directory
             </Link>
-            <Link to="/reservations" style={{ color: 'var(--text-muted)' }}>
+            <Link to="/menu" style={{ color: 'var(--text-muted)' }}>
               Dining Reservations
             </Link>
             <Link to="/login" style={{ color: 'var(--accent-gold)' }}>
