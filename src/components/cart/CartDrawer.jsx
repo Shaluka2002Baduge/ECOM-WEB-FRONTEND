@@ -4,7 +4,8 @@ import { ShoppingBag, X, Sparkles, ArrowRight } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import CartItem from './CartItem';
 import Button from '../common/Button';
-import { formatCurrency } from '../../utils/currency';
+import { formatCurrency, formatPrice } from '../../utils/currency';
+import menuService from '../../services/menuService';
 
 /**
  * Accessible Slide-out Cart Drawer
@@ -18,18 +19,54 @@ import { formatCurrency } from '../../utils/currency';
  */
 export const CartDrawer = () => {
   const {
-    items,
+    items: cartItems,
     isDrawerOpen,
     closeDrawer,
-    subtotal,
-    tax,
-    deliveryFee,
-    totalPrice,
-    clearCart
+    clearCart,
+    removeItem
   } = useCart();
+  const items = cartItems;
   const navigate = useNavigate();
   const drawerRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
+
+  // 2. PROPER CALCULATION:
+  const subtotal = cartItems.reduce((acc, item) => acc + (Number(item.price) * (Number(item.quantity) || 1)), 0);
+  const serviceVat = subtotal * 0.10;
+  const deliveryFee = cartItems.length > 0 ? 450 : 0;
+  const totalDue = subtotal + serviceVat + deliveryFee;
+  const totalPrice = totalDue;
+
+  // 3. AUTO CLEAR STALE PRICES:
+  // If an item in cart has a price < 100 (old cached data), clear it or update it from current menu state.
+  useEffect(() => {
+    if (isDrawerOpen && cartItems.length > 0) {
+      const staleItems = cartItems.filter((item) => Number(item.price) < 100);
+      if (staleItems.length > 0) {
+        menuService.getMenuItems('All', '').then((freshMenu) => {
+          let updatedAny = false;
+          staleItems.forEach((stale) => {
+            const freshMatch = freshMenu.find(
+              (m) => String(m.id) === String(stale.id) || m.name.toLowerCase() === stale.name.toLowerCase()
+            );
+            if (freshMatch && Number(freshMatch.price) >= 100) {
+              stale.price = Number(freshMatch.price);
+              updatedAny = true;
+            } else {
+              removeItem(stale.id, stale.specialInstructions);
+            }
+          });
+          if (updatedAny) {
+            try {
+              localStorage.setItem('ralahami_cart_items', JSON.stringify(cartItems));
+            } catch (e) {}
+          }
+        }).catch(() => {
+          staleItems.forEach((stale) => removeItem(stale.id, stale.specialInstructions));
+        });
+      }
+    }
+  }, [isDrawerOpen, cartItems, removeItem]);
 
   useEffect(() => {
     if (isDrawerOpen) {
@@ -299,11 +336,11 @@ export const CartDrawer = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>Subtotal</span>
-                <span>{formatCurrency(subtotal)}</span>
+                <span>Rs. {Number(subtotal).toLocaleString('en-LK')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>Service & Royal VAT (10%)</span>
-                <span>{formatCurrency(tax)}</span>
+                <span>Rs. {Number(serviceVat).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
                 <span>Palace Delivery</span>
@@ -311,7 +348,7 @@ export const CartDrawer = () => {
                   {deliveryFee === 0 ? (
                     <strong style={{ color: 'var(--accent-emerald)', letterSpacing: '0.04em' }}>COMPLIMENTARY</strong>
                   ) : (
-                    formatCurrency(deliveryFee)
+                    `Rs. ${Number(deliveryFee).toLocaleString('en-LK')}`
                   )}
                 </span>
               </div>
@@ -327,7 +364,9 @@ export const CartDrawer = () => {
                 }}
               >
                 <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-serif)' }}>Estimated Total</span>
-                <span className="text-gradient-gold">{formatCurrency(totalPrice)}</span>
+                <span className="text-gradient-gold">
+                  Rs. {Number(totalDue).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                </span>
               </div>
             </div>
 
@@ -336,7 +375,7 @@ export const CartDrawer = () => {
               variant="primary"
               size="lg"
               onClick={handleProceedToCheckout}
-              ariaLabel={`Proceed to checkout with total amount ${formatCurrency(totalPrice)}`}
+              ariaLabel={`Proceed to checkout with total amount Rs. ${Number(totalDue).toLocaleString('en-LK')}`}
               style={{
                 width: '100%',
                 fontWeight: '800',
@@ -351,7 +390,7 @@ export const CartDrawer = () => {
                 boxShadow: '0 4px 20px rgba(212, 175, 55, 0.4)'
               }}
             >
-              <span>Proceed to Royal Checkout</span>
+              <span>Proceed to Royal Checkout (Rs. {Number(totalDue).toLocaleString('en-LK', { minimumFractionDigits: 0, maximumFractionDigits: 2 })})</span>
               <ArrowRight size={18} />
             </Button>
           </div>

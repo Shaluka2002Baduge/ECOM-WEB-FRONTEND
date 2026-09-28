@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, UtensilsCrossed, Calendar, Compass, ShieldCheck, HeartHandshake, Flame, Clock } from 'lucide-react';
 import Button from '../components/common/Button';
-import { FALLBACK_MENU_ITEMS } from '../services/menuService';
+import { menuService, FALLBACK_MENU_ITEMS } from '../services/menuService';
 import MenuCard from '../components/menu/MenuCard';
 import { useCart } from '../context/CartContext';
-import { formatCurrency } from '../utils/currency';
+import { formatPrice, formatCurrency } from '../utils/currency';
 
 /**
  * Raalahami Royal Heritage HomePage
@@ -13,13 +13,59 @@ import { formatCurrency } from '../utils/currency';
  * Features:
  * - Modern split-hero section (headline + storytelling on left, floating Ceylon signature dish with radial glow on right)
  * - 3 horizontal promo tiles (Royal Heritage Recipes, Lagoon & Catch, Ayurvedic Herbal Infusions)
- * - Signature Royal Curations showcase
+ * - Signature Royal Curations showcase with dynamic live API pricing
  * - The Raalahami Legacy & EDI Accessibility commitment
  */
 export const HomePage = () => {
   const { addItem } = useCart();
-  const signatureDishes = FALLBACK_MENU_ITEMS.slice(0, 3);
-  const heroDish = FALLBACK_MENU_ITEMS[0]; // Royal Dutch Burgher Lamprais
+  const [menuItems, setMenuItems] = useState([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadMenu() {
+      try {
+        const data = await menuService.getMenuItems('All', '');
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setMenuItems(data);
+        }
+      } catch (err) {
+        console.warn('Dynamic menu load error on HomePage:', err);
+      } finally {
+        if (isMounted) setIsLoadingMenu(false);
+      }
+    }
+    loadMenu();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Dynamic signature dishes matching:
+  // (Lamprais: Rs. 1,850, Jaffna Crab Curry: Rs. 3,800, Black Pork Curry: Rs. 2,200)
+  const heroDish = useMemo(() => {
+    const lamprais = menuItems.find((i) =>
+      i.name.toLowerCase().includes('lamprais') || i.name.toLowerCase().includes('burgher')
+    );
+    return lamprais || FALLBACK_MENU_ITEMS[0];
+  }, [menuItems]);
+
+  const signatureDishes = useMemo(() => {
+    // 1. Lamprais (Rs. 1,850)
+    const lamprais =
+      menuItems.find((i) => i.name.toLowerCase().includes('lamprais')) ||
+      FALLBACK_MENU_ITEMS[0];
+
+    // 2. Jaffna Crab Curry (Rs. 3,800)
+    const crab =
+      menuItems.find((i) => i.name.toLowerCase().includes('crab')) ||
+      FALLBACK_MENU_ITEMS[1];
+
+    // 3. Black Pork Curry (Rs. 2,200)
+    const pork =
+      menuItems.find((i) => i.name.toLowerCase().includes('pork')) ||
+      FALLBACK_MENU_ITEMS[2];
+
+    return [lamprais, crab, pork].filter(Boolean);
+  }, [menuItems]);
 
   return (
     <div className="home-page fade-in">
@@ -267,7 +313,7 @@ export const HomePage = () => {
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {formatCurrency(heroDish?.price || 1850)}
+                      {formatPrice(heroDish?.price || 1850)}
                     </span>
                   </div>
 
@@ -440,7 +486,7 @@ export const HomePage = () => {
             </div>
             <Link to="/menu" style={{ textDecoration: 'none' }}>
               <Button variant="outline" size="sm">
-                View Complete Menu ({FALLBACK_MENU_ITEMS.length}+ Dishes) ➔
+                View Complete Menu ({menuItems.length || FALLBACK_MENU_ITEMS.length}+ Dishes) ➔
               </Button>
             </Link>
           </div>

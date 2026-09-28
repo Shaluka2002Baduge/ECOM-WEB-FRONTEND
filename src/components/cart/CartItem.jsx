@@ -73,7 +73,7 @@ export const CartItem = ({ item }) => {
           {item.name}
         </h4>
         <span style={{ fontSize: '0.825rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
-          {formatCurrency(item.price)} each
+          Rs. {Number(item.price).toLocaleString('en-LK')} each
         </span>
         {item.specialInstructions && (
           <p
@@ -176,7 +176,7 @@ export const CartItem = ({ item }) => {
             color: 'var(--accent-gold)'
           }}
         >
-          {formatCurrency(item.price * item.quantity)}
+          Rs. {(Number(item.price) * (Number(item.quantity) || 1)).toLocaleString('en-LK')}
         </span>
         <button
           type="button"

@@ -7,11 +7,15 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 const CartContext = createContext(null);
 
 export const CartProvider = ({ children }) => {
-  // Safe hydration from localStorage
+  // Safe hydration from localStorage with auto-clear of stale prices (< 100)
   const [items, setItems] = useState(() => {
     try {
       const saved = localStorage.getItem('ralahami_cart_items');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed)
+        ? parsed.filter((item) => Number(item.price) >= 100)
+        : [];
     } catch {
       return [];
     }
@@ -101,21 +105,21 @@ export const CartProvider = ({ children }) => {
 
   // Price and item count calculations
   const totalItems = useMemo(() => {
-    return items.reduce((total, item) => total + item.quantity, 0);
+    return items.reduce((total, item) => total + (Number(item.quantity) || 1), 0);
   }, [items]);
 
   const subtotal = useMemo(() => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+    return items.reduce((acc, item) => acc + (Number(item.price) * (Number(item.quantity) || 1)), 0);
   }, [items]);
 
   const tax = useMemo(() => {
-    return subtotal * 0.10; // 10% standard service / tax
+    return subtotal * 0.10; // 10% standard service / VAT
   }, [subtotal]);
 
   const deliveryFee = useMemo(() => {
     if (items.length === 0) return 0;
-    return subtotal >= 4500 ? 0 : 450; // Free royal delivery over Rs. 4,500, otherwise Rs. 450
-  }, [items.length, subtotal]);
+    return 450;
+  }, [items.length]);
 
   const totalPrice = useMemo(() => {
     return subtotal + tax + deliveryFee;

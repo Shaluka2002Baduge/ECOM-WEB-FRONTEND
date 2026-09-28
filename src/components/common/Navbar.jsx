@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { formatCurrency } from '../../utils/currency';
 import Button from './Button';
+import ThemeToggle from './ThemeToggle';
 
 /**
  * Accessible Raalahami Royal Navbar Component
@@ -196,7 +197,10 @@ const Navbar = () => {
         </nav>
 
         {/* Right Side: Glowing Cart Pill & Auth Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          {/* Theme Mode Toggle */}
+          <ThemeToggle />
+
           {/* Glowing Accessible Cart Drawer Trigger */}
           <button
             type="button"

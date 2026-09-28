@@ -104,8 +104,12 @@ function normalizeMenuItem(item) {
   else if (rawCat.toLowerCase().includes('veg')) cleanCategory = 'Vegetarian';
   else if (rawCat.toLowerCase().includes('main') || rawCat.toLowerCase().includes('curry') || rawCat.toLowerCase().includes('rice')) cleanCategory = 'Mains';
 
+  const resolvedId = item.id ?? item.menu_item_id ?? item.menuItemId ?? item._id;
+
   return {
-    id: item.id,
+    id: resolvedId,
+    menu_item_id: resolvedId,
+    menuItemId: resolvedId,
     name: item.name,
     category: cleanCategory,
     originalCategory: rawCat,

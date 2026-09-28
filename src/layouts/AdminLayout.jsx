@@ -384,12 +384,12 @@ export const AdminLayout = () => {
 
   return (
     <div
-      className="admin-saas-layout"
+      className="admin-saas-layout admin-isolated-theme"
       style={{
         display: 'flex',
         minHeight: '100vh',
-        backgroundColor: 'var(--bg-primary)',
-        color: 'var(--text-primary)'
+        backgroundColor: '#070A12',
+        color: '#F8FAFC'
       }}
     >
       {/* =================================================================== */}

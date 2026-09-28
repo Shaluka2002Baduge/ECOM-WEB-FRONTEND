@@ -10,11 +10,41 @@ export const orderService = {
    * @param {object} orderData - { items, deliveryAddress, paymentMethod, contactPhone, notes }
    */
   async createOrder(orderData) {
+    const customerEmail = (orderData.customerEmail || orderData.email || '').trim().toLowerCase();
+    const totalAmount = orderData.totalPrice || orderData.totalAmount || 0;
+
+    // Resolve item IDs defensively for all payload variants
+    if (Array.isArray(orderData.items)) {
+      orderData.items = orderData.items.map((item) => {
+        const resolvedId = item.id || item.menu_item_id || item.menuItemId || item._id;
+        return {
+          ...item,
+          id: Number(resolvedId) || resolvedId,
+          menu_item_id: Number(resolvedId) || resolvedId,
+          menuItemId: Number(resolvedId) || resolvedId,
+          name: item.name || item.title,
+          price: Number(item.price),
+          quantity: Number(item.quantity || 1)
+        };
+      });
+    }
+
+    const itemsCount = (orderData.items || []).length;
+    orderData.customerEmail = customerEmail;
+    orderData.email = customerEmail;
+
+    console.log('🚀 [SUBMITTING ORDER PAYLOAD]', { customerEmail, totalAmount, itemsCount });
+
     try {
       const response = await apiClient.post('/orders', orderData);
       return response.data;
     } catch (e) {
-      // Create local tracked order session for smooth presentation workflow
+      console.warn('Backend order submission encountered an error:', e.message || e);
+      // If it is an explicit 4xx client or validation error from the backend, rethrow so UI can notify the user
+      if (e.status && e.status >= 400 && e.status < 500) {
+        throw e;
+      }
+      // Create local tracked order session for offline/disconnected presentation workflow
       const mockOrder = {
         id: 'RAALAHAMI-' + Math.floor(100000 + Math.random() * 900000),
         createdAt: new Date().toISOString(),

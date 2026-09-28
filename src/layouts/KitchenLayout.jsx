@@ -216,7 +216,7 @@ export const KitchenLayout = () => {
 
   return (
     <div
-      className="kitchen-standalone-layout"
+      className="kitchen-standalone-layout kitchen-isolated-theme"
       style={{
         minHeight: '100vh',
         backgroundColor: '#090B0E',

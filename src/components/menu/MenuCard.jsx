@@ -3,7 +3,7 @@ import { Flame, Clock, Plus, Check, MessageSquare } from 'lucide-react';
 import DietaryBadges from './DietaryBadges';
 import Button from '../common/Button';
 import { useCart } from '../../context/CartContext';
-import { formatCurrency } from '../../utils/currency';
+import { formatPrice, formatCurrency } from '../../utils/currency';
 
 /**
  * Accessible Raalahami Menu Item Card
@@ -183,7 +183,7 @@ export const MenuCard = ({ item }) => {
               whiteSpace: 'nowrap'
             }}
           >
-            {formatCurrency(item.price)}
+            {formatPrice(item.price)}
           </span>
         </div>
 
@@ -262,7 +262,7 @@ export const MenuCard = ({ item }) => {
             variant={addedRecently ? 'secondary' : 'primary'}
             onClick={handleAddToCart}
             isLoading={isAdding}
-            ariaLabel={`Add ${item.name} for ${formatCurrency(item.price)} to royal order`}
+            ariaLabel={`Add ${item.name} for ${formatPrice(item.price)} to royal order`}
             style={{
               flex: 1,
               borderRadius: 'var(--radius-md)',

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 
 /**
  * Accessible LoginPage / Patron Portal
@@ -18,6 +19,7 @@ export const LoginPage = () => {
   const [email, setEmail] = useState(() => location.state?.prefillEmail || '');
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState(null);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [successNotification, setSuccessNotification] = useState(
     () => location.state?.successMessage || null
   );
@@ -165,6 +167,35 @@ export const LoginPage = () => {
             autoComplete="current-password"
           />
 
+          {/* Luxury Forgot Password Trigger Link */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              marginTop: '-0.75rem',
+              marginBottom: '1.25rem'
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setIsForgotPasswordOpen(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-gold)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                padding: '0.2rem 0',
+                transition: 'color var(--transition-fast)'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-amber)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+            >
+              Forgot Password?
+            </button>
+          </div>
+
           <Button
             type="submit"
             variant="primary"
@@ -172,7 +203,7 @@ export const LoginPage = () => {
             isLoading={isLoading}
             style={{
               width: '100%',
-              marginTop: '0.75rem',
+              marginTop: '0.25rem',
               marginBottom: '1.5rem',
               fontWeight: '700'
             }}
@@ -196,6 +227,19 @@ export const LoginPage = () => {
             </Link>
           </div>
         </form>
+
+        {/* 6-Digit OTP Recovery Modal */}
+        <ForgotPasswordModal
+          isOpen={isForgotPasswordOpen}
+          onClose={() => setIsForgotPasswordOpen(false)}
+          initialEmail={email}
+          onPasswordResetSuccess={(resetEmail) => {
+            setEmail(resetEmail);
+            setSuccessNotification(
+              'Password updated successfully. Please sign in with your new credentials.'
+            );
+          }}
+        />
       </div>
     </div>
   );

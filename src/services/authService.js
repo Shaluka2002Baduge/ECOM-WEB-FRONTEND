@@ -42,6 +42,24 @@ export const authService = {
   async getCurrentUser() {
     const response = await apiClient.get('/auth/me');
     return response.data;
+  },
+
+  /**
+   * Request password reset OTP
+   * @param {string} email
+   */
+  async forgotPassword(email) {
+    const response = await apiClient.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  /**
+   * Verify OTP and reset password
+   * @param {object} resetData - { email, otp, newPassword }
+   */
+  async resetPassword(resetData) {
+    const response = await apiClient.post('/auth/reset-password', resetData);
+    return response.data;
   }
 };
 
