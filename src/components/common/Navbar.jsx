@@ -34,7 +34,7 @@ const Navbar = () => {
   if (role === 'ADMIN' || role === 'MANAGER') {
     dynamicLinks.push({ label: 'Admin Dashboard', path: '/admin', isRoleSpecific: true });
   } else if (role === 'KITCHEN_STAFF') {
-    dynamicLinks.push({ label: 'Kitchen Display', path: '/kitchen', isRoleSpecific: true });
+    dynamicLinks.push({ label: 'Order Fulfillment', path: '/admin/orders', isRoleSpecific: true });
   }
 
   const allNavLinks = [...baseLinks, ...dynamicLinks];

@@ -28,7 +28,14 @@ export class ApiError extends Error {
  * @returns {Promise<any>}
  */
 export async function request(endpoint, options = {}) {
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
+  const cleanEndpoint = endpoint.startsWith('/api/')
+    ? endpoint.substring(4)
+    : endpoint === '/api'
+    ? ''
+    : endpoint;
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${API_BASE_URL}${cleanEndpoint.startsWith('/') ? '' : '/'}${cleanEndpoint}`;
 
   const token = typeof localStorage !== 'undefined'
     ? (localStorage.getItem('ralahami_auth_token') || localStorage.getItem('token'))

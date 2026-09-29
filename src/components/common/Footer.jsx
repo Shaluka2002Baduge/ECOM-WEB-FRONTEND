@@ -53,23 +53,6 @@ const Footer = () => {
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
               Celebrating Sri Lankan culinary heritage through chieftain recipes passed down across generations. Authentically spiced, sustainably sourced, and served with royal hospitality.
             </p>
-            {/* EDI Compliance Badge */}
-            <div
-              style={{
-                marginTop: '1.25rem',
-                padding: '0.65rem 0.85rem',
-                backgroundColor: 'rgba(212, 175, 55, 0.08)',
-                border: '1px solid rgba(212, 175, 55, 0.25)',
-                borderRadius: 'var(--radius-sm)'
-              }}
-            >
-              <span style={{ fontSize: '0.75rem', color: 'var(--accent-gold)', fontWeight: '700', display: 'block', textTransform: 'uppercase' }}>
-                ♿ EDI & Accessibility Commitment
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Compliant with WCAG 2.1 AA standards for an inclusive dining experience.
-              </span>
-            </div>
           </div>
 
           {/* Column 2: Quick Links */}

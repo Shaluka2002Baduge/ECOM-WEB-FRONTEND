@@ -490,7 +490,7 @@ export const ReservationPage = () => {
               />
             </div>
 
-            {/* Step 5: EDI Accessibility & Dietary Accommodations */}
+            {/* Step 5: Dietary & Seating Notes */}
             <div style={{ marginBottom: '2.5rem' }}>
               <label
                 htmlFor="accessibility-notes"
@@ -504,7 +504,7 @@ export const ReservationPage = () => {
                   marginBottom: '0.4rem'
                 }}
               >
-                <span>♿ EDI Accessibility & Dietary Notes</span>
+                <span>Special Dietary & Seating Requests</span>
               </label>
               <textarea
                 id="accessibility-notes"

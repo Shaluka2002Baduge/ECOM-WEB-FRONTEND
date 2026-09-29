@@ -64,30 +64,48 @@ export const orderService = {
   },
 
   /**
-   * Fetch order details by order ID
+   * Fetch order details by order ID or reference
    */
   async getOrderById(orderId) {
+    if (!orderId) return null;
     try {
-      const response = await apiClient.get(`/orders/${orderId}`);
-      return response.data;
+      let response;
+      try {
+        response = await apiClient.get(`/orders/track/${orderId}`);
+      } catch (trackErr) {
+        response = await apiClient.get(`/orders/${orderId}`);
+      }
+      const backendData = response.data?.order || response.data?.data || response.data;
+      if (backendData) {
+        // Sync local storage so subsequent offline reads stay updated
+        if (typeof sessionStorage !== 'undefined') {
+          try {
+            const saved = JSON.parse(sessionStorage.getItem('ralahami_demo_orders') || '[]');
+            const idx = saved.findIndex(
+              (o) =>
+                String(o.id) === String(orderId) ||
+                String(o.order_number) === String(orderId) ||
+                String(o.orderNumber) === String(orderId)
+            );
+            if (idx >= 0) {
+              saved[idx] = { ...saved[idx], ...backendData };
+            } else {
+              saved.unshift(backendData);
+            }
+            sessionStorage.setItem('ralahami_demo_orders', JSON.stringify(saved));
+          } catch (ignore) {}
+        }
+        return backendData;
+      }
     } catch (e) {
       const savedOrders = JSON.parse(sessionStorage.getItem('ralahami_demo_orders') || '[]');
-      const match = savedOrders.find(o => String(o.id) === String(orderId));
-      if (match) return match;
-
-      return {
-        id: orderId,
-        createdAt: new Date(Date.now() - 15 * 60000).toISOString(),
-        status: 'PREPARING',
-        estimatedMinutes: 20,
-        items: [
-          { name: 'Royal Dutch Burgher Lamprais', quantity: 2, price: 1850 },
-          { name: 'Cashew Nut & Green Pea Baduma', quantity: 1, price: 1650 }
-        ],
-        totalPrice: 5885,
-        deliveryAddress: '24 Galle Face Terrace, Colombo 03',
-        notes: 'Please pack banana leaf extra securely'
-      };
+      const match = savedOrders.find(
+        (o) =>
+          String(o.id) === String(orderId) ||
+          String(o.order_number) === String(orderId) ||
+          String(o.orderNumber) === String(orderId)
+      );
+      return match || null;
     }
   },
 
@@ -95,22 +113,143 @@ export const orderService = {
    * Track order lifecycle status
    */
   async trackOrderStatus(orderId) {
+    return this.getOrderById(orderId);
+  },
+
+  /**
+   * Fetch all orders for Admin Fulfillment Center
+   */
+  async getAllOrders() {
     try {
-      const response = await apiClient.get(`/orders/${orderId}/status`);
-      return response.data;
+      const response = await apiClient.get('/admin/orders');
+      const backendOrders = response.data?.data || response.data || [];
+      return Array.isArray(backendOrders) ? backendOrders : [];
     } catch (e) {
-      return {
-        orderId,
-        currentStage: 2,
-        stages: [
-          { label: 'Order Placed', timestamp: '12:30 PM', completed: true },
-          { label: 'Kitchen Confirmed', timestamp: '12:34 PM', completed: true },
-          { label: 'Simmering & Preparation', timestamp: 'In Progress', active: true },
-          { label: 'Out with Royal Courier', timestamp: 'Pending', completed: false },
-          { label: 'Delivered', timestamp: 'Pending', completed: false }
-        ]
-      };
+      console.warn('Backend /admin/orders unavailable, falling back to local store:', e.message);
+      const savedOrders = JSON.parse(sessionStorage.getItem('ralahami_demo_orders') || '[]');
+      if (savedOrders.length > 0) return savedOrders;
+
+      // Seed initial realistic orders if none present
+      const initialSeed = [
+        {
+          id: 'RAALAHAMI-892101',
+          order_number: 'RAALAHAMI-892101',
+          customer_name: 'Deshamanya Wickramasinghe',
+          customerEmail: 'wickrama@royal.lk',
+          phone: '+94 77 123 4567',
+          fulfillment_type: 'Home Delivery',
+          orderType: 'DELIVERY',
+          status: 'PREPARING',
+          deliveryAddress: '14/2 Cinnamon Gardens, Colombo 07',
+          createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
+          estimatedMinutes: 20,
+          totalPrice: 8450,
+          items: [
+            { name: 'Royal Dutch Burgher Lamprais', quantity: 2, price: 2850 },
+            { name: 'Jaffna Blue Crab Curry', quantity: 1, price: 2750 }
+          ]
+        },
+        {
+          id: 'RAALAHAMI-892102',
+          order_number: 'RAALAHAMI-892102',
+          customer_name: 'Lady Anula Rathnayake',
+          customerEmail: 'anula.rathnayake@heritage.lk',
+          phone: '+94 71 987 6543',
+          fulfillment_type: 'Takeaway',
+          orderType: 'TAKEAWAY',
+          status: 'PENDING',
+          deliveryAddress: 'Raalahami Pickup Counter',
+          createdAt: new Date(Date.now() - 10 * 60000).toISOString(),
+          estimatedMinutes: 15,
+          totalPrice: 4200,
+          items: [
+            { name: 'Claypot Black Pepper Mutton Curry', quantity: 1, price: 2450 },
+            { name: 'Kithul Treacle & Coconut Watalappan', quantity: 2, price: 875 }
+          ]
+        },
+        {
+          id: 'RAALAHAMI-892103',
+          order_number: 'RAALAHAMI-892103',
+          customer_name: 'Dr. Rohan De Silva',
+          customerEmail: 'rohan.desilva@colombo.edu.lk',
+          phone: '+94 76 543 2109',
+          fulfillment_type: 'Home Delivery',
+          orderType: 'DELIVERY',
+          status: 'OUT_FOR_DELIVERY',
+          deliveryAddress: '88 Galle Face Court, Colombo 03',
+          createdAt: new Date(Date.now() - 45 * 60000).toISOString(),
+          estimatedMinutes: 5,
+          totalPrice: 6200,
+          items: [
+            { name: 'Wild Jumbo Lagoon Prawns in Coconut Milk', quantity: 2, price: 3100 }
+          ]
+        }
+      ];
+
+      sessionStorage.setItem('ralahami_demo_orders', JSON.stringify(initialSeed));
+      return initialSeed;
     }
+  },
+
+  /**
+   * Advance or update order status (Admin Fulfillment)
+   * @param {string} orderId
+   * @param {string} newStatus
+   * @param {string} notes
+   */
+  async updateOrderStatus(orderId, newStatus, notes = '') {
+    // 1. Update in local session storage for instantaneous frontend cross-tab reactive sync
+    const savedOrders = JSON.parse(sessionStorage.getItem('ralahami_demo_orders') || '[]');
+    let updatedOrder = null;
+
+    const updatedList = savedOrders.map((ord) => {
+      if (
+        String(ord.id) === String(orderId) ||
+        String(ord.order_number) === String(orderId) ||
+        String(ord.orderNumber) === String(orderId)
+      ) {
+        updatedOrder = {
+          ...ord,
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+          adminNotes: notes || ord.adminNotes
+        };
+        return updatedOrder;
+      }
+      return ord;
+    });
+
+    if (!updatedOrder) {
+      updatedOrder = {
+        id: orderId,
+        order_number: orderId,
+        status: newStatus,
+        updatedAt: new Date().toISOString(),
+        adminNotes: notes
+      };
+      updatedList.unshift(updatedOrder);
+    }
+
+    sessionStorage.setItem('ralahami_demo_orders', JSON.stringify(updatedList));
+
+    // 2. Transmit to backend
+    try {
+      const response = await apiClient.patch(`/admin/orders/${orderId}/status`, {
+        status: newStatus,
+        notes
+      });
+      return response.data?.data || response.data || updatedOrder;
+    } catch (e) {
+      console.warn('Backend patch order status fallback to session store:', e.message);
+      return updatedOrder;
+    }
+  },
+
+  /**
+   * Cancel an order with confirmation and notes
+   */
+  async cancelOrder(orderId, reason = '') {
+    return this.updateOrderStatus(orderId, 'CANCELLED', reason || 'Order cancelled by Admin Operations');
   }
 };
 

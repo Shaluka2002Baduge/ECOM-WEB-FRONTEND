@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import {
   Utensils,
   Boxes,
   CalendarDays,
   ShieldCheck,
   TrendingUp,
+  ShoppingBag,
   LogOut,
   Menu as MenuIcon,
   X,
@@ -19,6 +20,7 @@ import InventoryManagement from '../components/admin/InventoryManagement';
 import ReservationManagement from '../components/admin/ReservationManagement';
 import StaffManagement from '../components/admin/StaffManagement';
 import ReportsManagement from '../components/admin/ReportsManagement';
+import OrderManagement from '../components/admin/OrderManagement';
 
 /**
  * Dedicated Full-Height SaaS Admin Layout
@@ -26,15 +28,20 @@ import ReportsManagement from '../components/admin/ReportsManagement';
  * Features:
  * - Sleek, fixed/collapsible dark luxury sidebar
  * - Top Header with Admin title, live clock, logged-in admin email, and direct Logout
- * - Modular dynamic views (Menu, Inventory, Reservations, Staff RBAC, Financial Reports)
+ * - Modular dynamic views (Orders Fulfillment, Menu, Inventory, Reservations, Staff RBAC, Financial Reports)
  * - Zero nested component definitions: all modals and forms isolated in standalone modules
  */
 export const AdminLayout = () => {
   const { user, role, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Active section state: 'menu' | 'inventory' | 'reservations' | 'staff' | 'reports'
-  const [activeSection, setActiveSection] = useState('menu');
+  // Active section state: 'orders' | 'menu' | 'inventory' | 'reservations' | 'staff' | 'reports'
+  const [activeSection, setActiveSection] = useState(() => {
+    if (location.pathname.includes('/orders')) return 'orders';
+    if (role === 'KITCHEN_STAFF') return 'orders';
+    return 'orders'; // Default primary operational view
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -45,6 +52,13 @@ export const AdminLayout = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Sync active section if URL changes
+  useEffect(() => {
+    if (location.pathname.includes('/orders')) {
+      setActiveSection('orders');
+    }
+  }, [location.pathname]);
+
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true });
@@ -52,6 +66,12 @@ export const AdminLayout = () => {
 
   // Navigation Items with Icons from lucide-react
   const navItems = [
+    {
+      id: 'orders',
+      label: 'Order Fulfillment',
+      icon: ShoppingBag,
+      description: 'Live dispatch, delivery & takeaway'
+    },
     {
       id: 'menu',
       label: 'Menu Management',
@@ -442,6 +462,10 @@ export const AdminLayout = () => {
 
         {/* Dynamic Content Area (Modular Sub-Views) */}
         <main style={{ flex: 1, padding: '1.75rem' }}>
+          {activeSection === 'orders' && (
+            <OrderManagement onNotify={setNotification} />
+          )}
+
           {activeSection === 'menu' && (
             <MenuManagement onNotify={setNotification} />
           )}

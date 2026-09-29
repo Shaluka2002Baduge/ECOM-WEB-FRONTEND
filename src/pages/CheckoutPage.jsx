@@ -5,6 +5,7 @@ import axios from 'axios';
 import { apiClient } from '../api/apiClient';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import orderService from '../services/orderService';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -37,6 +38,7 @@ const isTimeValid = (timeStr) => {
 export const CheckoutPage = () => {
   const { items: cartItems, clearCart } = useCart();
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   const today = new Date().toISOString().split('T')[0];
@@ -424,9 +426,50 @@ export const CheckoutPage = () => {
       }
 
       clearCart();
-      const placedOrderId =
-        result?.id || result?.orderId || result?.data?.id || result?.data?.orderId;
-      navigate(`/orders/track?orderId=${placedOrderId || 'SUCCESS'}`);
+
+      const placedOrder = result?.data?.data || result?.data?.order || result?.data || result?.order || result || {};
+      const rawRef =
+        placedOrder.order_number ||
+        placedOrder.orderNumber ||
+        placedOrder.order_id ||
+        placedOrder.id ||
+        result?.data?.order_number ||
+        result?.data?.orderNumber ||
+        result?.data?.id ||
+        result?.order_number ||
+        result?.orderNumber ||
+        result?.id ||
+        '';
+
+      const cleanRef = String(rawRef).replace('#', '').trim();
+
+      if (typeof localStorage !== 'undefined' && cleanRef) {
+        localStorage.setItem('last_placed_order_id', cleanRef);
+        localStorage.setItem('patron_email', finalEmail);
+      }
+
+      // Determine fulfillment type
+      const rawFulfillmentType =
+        placedOrder.fulfillment_type ||
+        placedOrder.fulfillmentType ||
+        payload.fulfillment_type ||
+        payload.orderType ||
+        orderType;
+
+      const normType = String(rawFulfillmentType).toLowerCase().replace(/[-_ ]/g, '');
+      const targetTrackingPath = cleanRef ? `/tracking/${cleanRef}` : '/tracking';
+
+      if (normType.includes('dinein') || normType.includes('dine')) {
+        toast.success('Table & Feast Confirmed! Track your preparation in real-time.');
+        navigate(targetTrackingPath);
+      } else if (normType.includes('takeaway') || normType.includes('pickup')) {
+        toast.success('Takeaway order placed! We are preparing your feast.');
+        navigate(targetTrackingPath);
+      } else {
+        // Home Delivery (default)
+        toast.success('Order placed successfully! Tracking your feast.');
+        navigate(targetTrackingPath);
+      }
     } catch (err) {
       if (
         err.response?.status === 409 ||

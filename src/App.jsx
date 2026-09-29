@@ -13,14 +13,13 @@ import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import KitchenDashboard from './pages/KitchenDashboard';
 
 /**
  * Root Application Router
  * Strict architectural separation:
  * 1. CustomerLayout: Public storefront with Navbar, Footer, and Cart Drawer.
  * 2. AdminLayout: Dedicated full-height SaaS layout with dark luxury sidebar, custom header, and no customer chrome.
- * 3. KitchenDashboard: Dedicated full-screen KDS ticket terminal.
+ * 3. Kitchen KDS Decommissioned: All order fulfillment integrated directly into Admin Operations.
  */
 function App() {
   return (
@@ -30,18 +29,22 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/menu" element={<MenuPage />} />
         <Route path="/reservations" element={<Navigate to="/menu" replace />} />
-        <Route path="/reservation" element={<Navigate to="/menu" replace />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/track" element={<OrderTrackingPage />} />
+        <Route path="/orders/track/:orderId" element={<OrderTrackingPage />} />
+        <Route path="/tracking" element={<OrderTrackingPage />} />
+        <Route path="/tracking/:orderId" element={<OrderTrackingPage />} />
+        <Route path="/track" element={<OrderTrackingPage />} />
+        <Route path="/track/:orderId" element={<OrderTrackingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
 
-      {/* 2. Dedicated SaaS Admin Portal (Completely separated from customer layout) */}
+      {/* 2. Dedicated SaaS Admin Portal & Central Order Fulfillment */}
       <Route
         path="/admin/*"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'KITCHEN_STAFF']}>
             <AdminLayout />
           </ProtectedRoute>
         }
@@ -49,29 +52,15 @@ function App() {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute allowedRoles={['ADMIN']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'KITCHEN_STAFF']}>
             <AdminLayout />
           </ProtectedRoute>
         }
       />
 
-      {/* 3. Dedicated Kitchen Display Screen (KDS/KOT) */}
-      <Route
-        path="/kitchen/*"
-        element={
-          <ProtectedRoute allowedRoles={['KITCHEN_STAFF', 'ADMIN']}>
-            <KitchenDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/kitchen"
-        element={
-          <ProtectedRoute allowedRoles={['KITCHEN_STAFF', 'ADMIN']}>
-            <KitchenDashboard />
-          </ProtectedRoute>
-        }
-      />
+      {/* 3. Decommissioned Legacy Kitchen Display - Permanent Immediate Redirection to Admin Orders */}
+      <Route path="/kitchen/*" element={<Navigate to="/admin/orders" replace />} />
+      <Route path="/kitchen" element={<Navigate to="/admin/orders" replace />} />
 
       {/* Wildcard Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

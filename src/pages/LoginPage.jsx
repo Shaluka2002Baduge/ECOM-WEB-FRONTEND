@@ -47,11 +47,12 @@ export const LoginPage = () => {
       if (res && res.success) {
         const userRole = (res.user?.role || '').toUpperCase();
 
-        // Dynamic Role-Based Redirection
+        // Dynamic Role-Based Redirection: Kitchen staff routed to Admin Order Fulfillment
+        const userEmail = (res.user?.email || email || '').toLowerCase();
         if (userRole === 'ADMIN' || userRole === 'MANAGER') {
           navigate('/admin', { replace: true });
-        } else if (userRole === 'KITCHEN_STAFF') {
-          navigate('/kitchen', { replace: true });
+        } else if (userRole === 'KITCHEN_STAFF' || userEmail.includes('kitchen')) {
+          navigate('/admin/orders', { replace: true });
         } else {
           // CUSTOMER
           navigate('/menu', { replace: true });

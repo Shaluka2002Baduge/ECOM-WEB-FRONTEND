@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { ToastProvider } from './context/ToastContext';
 import App from './App';
 import './index.css';
 
@@ -16,7 +17,9 @@ if (rootElement) {
         <ThemeProvider>
           <AuthProvider>
             <CartProvider>
-              <App />
+              <ToastProvider>
+                <App />
+              </ToastProvider>
             </CartProvider>
           </AuthProvider>
         </ThemeProvider>

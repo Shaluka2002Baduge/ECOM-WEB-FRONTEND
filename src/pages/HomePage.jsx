@@ -1,17 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, UtensilsCrossed, Calendar, Compass, ShieldCheck, HeartHandshake, Flame, Clock } from 'lucide-react';
+import { Sparkles, UtensilsCrossed, Compass, ShieldCheck, HeartHandshake, Flame, Clock } from 'lucide-react';
 import Button from '../components/common/Button';
 import { menuService, FALLBACK_MENU_ITEMS } from '../services/menuService';
 import MenuCard from '../components/menu/MenuCard';
 import { useCart } from '../context/CartContext';
-import { formatPrice, formatCurrency } from '../utils/currency';
+import { formatPrice } from '../utils/currency';
 
 /**
  * Raalahami Royal Heritage HomePage
  * Cohesive Sri Lankan Royal Heritage Design System
  * Features:
- * - Modern split-hero section (headline + storytelling on left, floating Ceylon signature dish with radial glow on right)
+ * - Animated luxury food video/GIF background in hero section with dark obsidian gradient overlay
+ * - Clean original floating Ceylon signature dish with radial glow on right
  * - 3 horizontal promo tiles (Royal Heritage Recipes, Lagoon & Catch, Ayurvedic Herbal Infusions)
  * - Signature Royal Curations showcase with dynamic live API pricing
  * - The Raalahami Legacy & EDI Accessibility commitment
@@ -69,17 +70,53 @@ export const HomePage = () => {
 
   return (
     <div className="home-page fade-in">
-      {/* 1. SPLIT-HERO SECTION */}
+      {/* 1. SPLIT-HERO SECTION WITH LUXURY FOOD VIDEO/GIF BACKGROUND */}
       <section
         style={{
           position: 'relative',
-          padding: '4rem 0 5.5rem 0',
-          background: 'radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.12) 0%, transparent 60%), radial-gradient(ellipse at 15% 85%, rgba(229, 169, 60, 0.08) 0%, transparent 50%), linear-gradient(180deg, rgba(17, 23, 38, 0.8) 0%, #0B0F19 100%)',
+          padding: '4.5rem 0 5.5rem 0',
           borderBottom: '1px solid var(--border-subtle)',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          backgroundColor: '#0B0F19'
         }}
         aria-labelledby="hero-heading"
       >
+        {/* Background Looping Food Video / GIF with Obsidian Glass Gradient Overlay */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.65,
+              filter: 'brightness(0.98) contrast(1.08) saturate(1.15)'
+            }}
+          >
+            <source src="/videos/hero-restaurant.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/31631562/13476222_3840_2160_25fps.mp4" type="video/mp4" />
+          </video>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.14) 0%, transparent 60%), radial-gradient(ellipse at 15% 85%, rgba(229, 169, 60, 0.08) 0%, transparent 50%), linear-gradient(180deg, rgba(11, 15, 25, 0.45) 0%, rgba(11, 15, 25, 0.62) 65%, #0B0F19 100%)'
+            }}
+          />
+        </div>
+
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <div
             style={{
@@ -97,7 +134,11 @@ export const HomePage = () => {
                   marginBottom: '1.25rem',
                   padding: '0.4rem 0.9rem',
                   fontSize: '0.8rem',
-                  letterSpacing: '0.08em'
+                  letterSpacing: '0.08em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                 }}
               >
                 <Sparkles size={14} style={{ color: 'var(--accent-gold)' }} />
@@ -111,7 +152,8 @@ export const HomePage = () => {
                   lineHeight: 1.15,
                   marginBottom: '1.25rem',
                   color: 'var(--text-primary)',
-                  letterSpacing: '0.02em'
+                  letterSpacing: '0.02em',
+                  textShadow: '0 3px 14px rgba(0, 0, 0, 0.85)'
                 }}
               >
                 Feast Like Royal Court at{' '}
@@ -124,7 +166,8 @@ export const HomePage = () => {
                   color: 'var(--text-secondary)',
                   lineHeight: 1.75,
                   marginBottom: '2.25rem',
-                  maxWidth: '560px'
+                  maxWidth: '560px',
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.75)'
                 }}
               >
                 Immerse yourself in authentic Dutch Burgher Lamprais, fiery Jaffna lagoon crab, and slow-braised heirloom curries wrapped in fragrant banana leaves. Delivered fresh to your residence or reserved exclusively for your court.
@@ -337,11 +380,11 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 2. THREE HORIZONTAL PROMO TILES */}
+      {/* 2. THREE HORIZONTAL PROMO TILES WITH LIVE BACKGROUND VIDEOS */}
       <section
         style={{
           padding: '3.5rem 0',
-          backgroundColor: 'rgba(17, 23, 38, 0.65)',
+          backgroundColor: '#070B14',
           borderBottom: '1px solid var(--border-subtle)'
         }}
         aria-label="Culinary highlights"
@@ -351,111 +394,351 @@ export const HomePage = () => {
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '1.5rem'
+              gap: '1.75rem'
             }}
           >
-            {/* Promo Tile 1: Royal Heritage Recipes */}
+            {/* Promo Tile 1: Royal Heritage Recipes (Browsing Recipe Book Video 5970015) */}
             <div
-              className="luxury-card"
+              className="glass-panel"
               style={{
-                padding: '1.75rem',
-                borderLeft: '4px solid var(--accent-gold)'
+                position: 'relative',
+                padding: '2rem',
+                borderRadius: 'var(--radius-lg)',
+                overflow: 'hidden',
+                borderLeft: '4px solid var(--accent-gold)',
+                borderTop: '1px solid rgba(212, 175, 55, 0.3)',
+                borderRight: '1px solid var(--border-subtle)',
+                borderBottom: '1px solid var(--border-subtle)',
+                minHeight: '230px',
+                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
               }}
             >
+              {/* Background Video */}
               <div
+                aria-hidden="true"
                 style={{
-                  width: '3rem',
-                  height: '3rem',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(212, 175, 55, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  marginBottom: '1rem',
-                  border: '1px solid rgba(212, 175, 55, 0.25)'
+                  position: 'absolute',
+                  inset: 0,
+                  overflow: 'hidden',
+                  zIndex: 0,
+                  pointerEvents: 'none'
                 }}
               >
-                🏺
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0.58,
+                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
+                  }}
+                >
+                  <source src="/videos/tile-recipes.mp4" type="video/mp4" />
+                  <source src="https://videos.pexels.com/video-files/5970015/5970015-uhd_4096_2160_25fps.mp4" type="video/mp4" />
+                </video>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
+                  }}
+                />
               </div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                Royal Heritage Recipes
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                Slow-simmered in clay pots with Ceylon cinnamon bark, green cardamom, roasted coriander, and rich virgin coconut milk.
-              </p>
+
+              {/* Content on top */}
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div
+                  style={{
+                    width: '3.2rem',
+                    height: '3.2rem',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.6rem',
+                    marginBottom: '1rem',
+                    border: '1px solid rgba(212, 175, 55, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  🏺
+                </div>
+                <h3
+                  style={{
+                    fontSize: '1.25rem',
+                    marginBottom: '0.5rem',
+                    color: '#F8FAFC',
+                    fontFamily: 'var(--font-serif)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
+                  }}
+                >
+                  Royal Heritage Recipes
+                </h3>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
+                  }}
+                >
+                  Slow-simmered in clay pots with Ceylon cinnamon bark, green cardamom, roasted coriander, and rich virgin coconut milk.
+                </p>
+              </div>
             </div>
 
-            {/* Promo Tile 2: Lagoon & Ocean Catch */}
+            {/* Promo Tile 2: Lagoon & Spice Catch (Seafood Paella & Fresh Catch Video 32797269) */}
             <div
-              className="luxury-card"
+              className="glass-panel"
               style={{
-                padding: '1.75rem',
-                borderLeft: '4px solid var(--accent-amber)'
+                position: 'relative',
+                padding: '2rem',
+                borderRadius: 'var(--radius-lg)',
+                overflow: 'hidden',
+                borderLeft: '4px solid var(--accent-amber)',
+                borderTop: '1px solid rgba(229, 169, 60, 0.3)',
+                borderRight: '1px solid var(--border-subtle)',
+                borderBottom: '1px solid var(--border-subtle)',
+                minHeight: '230px',
+                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
               }}
             >
+              {/* Background Video */}
               <div
+                aria-hidden="true"
                 style={{
-                  width: '3rem',
-                  height: '3rem',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(229, 169, 60, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  marginBottom: '1rem',
-                  border: '1px solid rgba(229, 169, 60, 0.25)'
+                  position: 'absolute',
+                  inset: 0,
+                  overflow: 'hidden',
+                  zIndex: 0,
+                  pointerEvents: 'none'
                 }}
               >
-                🦀
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0.58,
+                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
+                  }}
+                >
+                  <source src="/videos/tile-seafood.mp4" type="video/mp4" />
+                  <source src="https://videos.pexels.com/video-files/32797269/13981221_1080_1920_30fps.mp4" type="video/mp4" />
+                </video>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(ellipse at 80% 20%, rgba(229, 169, 60, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
+                  }}
+                />
               </div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                Lagoon & Spice Catch
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                Daily wild-caught Jaffna blue swimming crab, jumbo lagoon prawns, and yellowfin tuna tossed with toasted chili powder and murunga leaves.
-              </p>
+
+              {/* Content on top */}
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div
+                  style={{
+                    width: '3.2rem',
+                    height: '3.2rem',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.6rem',
+                    marginBottom: '1rem',
+                    border: '1px solid rgba(229, 169, 60, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  🦀
+                </div>
+                <h3
+                  style={{
+                    fontSize: '1.25rem',
+                    marginBottom: '0.5rem',
+                    color: '#F8FAFC',
+                    fontFamily: 'var(--font-serif)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
+                  }}
+                >
+                  Lagoon & Spice Catch
+                </h3>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
+                  }}
+                >
+                  Daily wild-caught Jaffna blue swimming crab, jumbo lagoon prawns, and yellowfin tuna tossed with toasted chili powder and murunga leaves.
+                </p>
+              </div>
             </div>
 
-            {/* Promo Tile 3: Ayurvedic Herbal Infusions */}
+            {/* Promo Tile 3: Ayurvedic Herbal Infusions (Refreshing Tamarind Lime Juice Video 34381881) */}
             <div
-              className="luxury-card"
+              className="glass-panel"
               style={{
-                padding: '1.75rem',
-                borderLeft: '4px solid var(--accent-emerald)'
+                position: 'relative',
+                padding: '2rem',
+                borderRadius: 'var(--radius-lg)',
+                overflow: 'hidden',
+                borderLeft: '4px solid var(--accent-emerald)',
+                borderTop: '1px solid rgba(16, 185, 129, 0.3)',
+                borderRight: '1px solid var(--border-subtle)',
+                borderBottom: '1px solid var(--border-subtle)',
+                minHeight: '230px',
+                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
               }}
             >
+              {/* Background Video */}
               <div
+                aria-hidden="true"
                 style={{
-                  width: '3rem',
-                  height: '3rem',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.5rem',
-                  marginBottom: '1rem',
-                  border: '1px solid rgba(16, 185, 129, 0.25)'
+                  position: 'absolute',
+                  inset: 0,
+                  overflow: 'hidden',
+                  zIndex: 0,
+                  pointerEvents: 'none'
                 }}
               >
-                🥥
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    opacity: 0.58,
+                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
+                  }}
+                >
+                  <source src="/videos/tile-herbal.mp4" type="video/mp4" />
+                  <source src="https://videos.pexels.com/video-files/34381881/14565478_2160_3840_30fps.mp4" type="video/mp4" />
+                </video>
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
+                  }}
+                />
               </div>
-              <h3 style={{ fontSize: '1.2rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
-                Ayurvedic Herbal Infusions
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                Spiced King Coconut (Thambili), chilled Ranawara herbal nectar, and Lemongrass-Cardamom elixirs brewed fresh each sunrise.
-              </p>
+
+              {/* Content on top */}
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div
+                  style={{
+                    width: '3.2rem',
+                    height: '3.2rem',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
+                    backdropFilter: 'blur(6px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '1.6rem',
+                    marginBottom: '1rem',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+                  }}
+                >
+                  🥥
+                </div>
+                <h3
+                  style={{
+                    fontSize: '1.25rem',
+                    marginBottom: '0.5rem',
+                    color: '#F8FAFC',
+                    fontFamily: 'var(--font-serif)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
+                  }}
+                >
+                  Ayurvedic Herbal Infusions
+                </h3>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
+                  }}
+                >
+                  Spiced King Coconut (Thambili), chilled Ranawara herbal nectar, and Lemongrass-Cardamom elixirs brewed fresh each sunrise.
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. SIGNATURE DISHES SHOWCASE */}
-      <section style={{ padding: '4.5rem 0' }} aria-labelledby="signatures-heading">
-        <div className="container">
+      {/* 3. SIGNATURE DISHES SHOWCASE (RED MARKED SECTION) */}
+      <section
+        style={{
+          position: 'relative',
+          padding: '5rem 0 5.5rem 0',
+          overflow: 'hidden',
+          backgroundColor: '#0B0F19',
+          borderBottom: '1px solid var(--border-subtle)'
+        }}
+        aria-labelledby="signatures-heading"
+      >
+        {/* Background Video: Cooking of Indian/Ceylon Food (9574814) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.55,
+              filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
+            }}
+          >
+            <source src="/videos/curations-cooking.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/9574814/9574814-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at 70% 30%, rgba(212, 175, 55, 0.14) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.55) 0%, rgba(11, 15, 25, 0.72) 60%, #0B0F19 100%)'
+            }}
+          />
+        </div>
+
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <div
             style={{
               display: 'flex',
@@ -467,13 +750,26 @@ export const HomePage = () => {
             }}
           >
             <div>
-              <span className="badge badge-emerald" style={{ marginBottom: '0.5rem' }}>
+              <span className="badge badge-emerald" style={{ marginBottom: '0.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
                 Handcrafted Daily
               </span>
-              <h2 id="signatures-heading" style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>
+              <h2
+                id="signatures-heading"
+                style={{
+                  fontSize: '2rem',
+                  marginBottom: '0.25rem',
+                  textShadow: '0 3px 12px rgba(0,0,0,0.85)'
+                }}
+              >
                 Signature Royal Curations
               </h2>
-              <p style={{ color: 'var(--text-muted)', margin: 0 }}>
+              <p
+                style={{
+                  color: 'var(--text-secondary)',
+                  margin: 0,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.75)'
+                }}
+              >
                 Finest selections crafted using heirloom Ceylon spices and master culinary techniques.
               </p>
             </div>
@@ -498,79 +794,76 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 4. HERITAGE NARRATIVE & EDI COMMITMENT */}
+      {/* 4. HERITAGE NARRATIVE & EDI COMMITMENT (YELLOW MARKED SECTION) */}
       <section
         style={{
-          padding: '4.5rem 0',
-          backgroundColor: 'var(--bg-secondary)',
+          position: 'relative',
+          padding: '5rem 0 5.5rem 0',
+          overflow: 'hidden',
+          backgroundColor: '#0B0F19',
           borderTop: '1px solid var(--border-subtle)',
           borderBottom: '1px solid var(--border-subtle)'
         }}
         aria-labelledby="heritage-heading"
       >
-        <div className="container">
-          <div
+        {/* Background Video: Putting Green Chili Pepper & Spices (9797433) */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            zIndex: 0,
+            pointerEvents: 'none'
+          }}
+        >
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '3rem',
-              alignItems: 'center'
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.82,
+              filter: 'brightness(1.05) contrast(1.1) saturate(1.25)'
             }}
           >
-            <div>
-              <span className="badge badge-gold" style={{ marginBottom: '0.75rem' }}>
-                The Raalahami Legacy
-              </span>
-              <h2 id="heritage-heading" style={{ marginBottom: '1.25rem' }}>
-                Heirloom Recipes, Royal Hospitality
-              </h2>
-              <p>
-                In the historic chieftain mansions of Sri Lanka, a "Raalahami" was revered as a guardian of regional culinary culture and noble hospitality. Feasts were curated with unhurried devotion: roasted cinnamon bark from Negombo, fragrant cardamom from the central highlands, and pure virgin coconut milk pressed at sunrise.
-              </p>
-              <p>
-                Every dish honors that legacy with zero compromises on quality, ethical local sourcing, and warm inclusivity for every patron who crosses our threshold.
-              </p>
-            </div>
+            <source src="/videos/heritage-chili.mp4" type="video/mp4" />
+            <source src="https://videos.pexels.com/video-files/9797433/9797433-hd_1920_1080_25fps.mp4" type="video/mp4" />
+          </video>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'radial-gradient(ellipse at 30% 70%, rgba(229, 169, 60, 0.08) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.28) 0%, rgba(11, 15, 25, 0.45) 65%, rgba(11, 15, 25, 0.85) 100%)'
+            }}
+          />
+        </div>
 
-            {/* EDI / Accessibility Feature Box */}
-            <div
-              className="glass-panel"
+        <div className="container" style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+            <span className="badge badge-gold" style={{ marginBottom: '1rem', boxShadow: '0 2px 8px rgba(0,0,0,0.5)', display: 'inline-flex' }}>
+              The Raalahami Legacy
+            </span>
+            <h2
+              id="heritage-heading"
               style={{
-                padding: '2rem',
-                borderLeft: '4px solid var(--accent-gold)'
+                fontSize: '2.4rem',
+                marginBottom: '1.25rem',
+                textShadow: '0 3px 12px rgba(0,0,0,0.85)',
+                color: 'var(--text-primary)'
               }}
             >
-              <h3 style={{ fontSize: '1.2rem', color: 'var(--accent-gold)', marginBottom: '0.75rem' }}>
-                ♿ EDI & Accessible Dining
-              </h3>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                We believe exceptional cuisine must be universally accessible to everyone:
-              </p>
-              <ul
-                style={{
-                  listStyle: 'none',
-                  padding: 0,
-                  margin: 0,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.65rem',
-                  fontSize: '0.875rem'
-                }}
-              >
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: 'var(--accent-emerald)', fontWeight: 'bold' }}>✓</span>
-                  Full keyboard navigation & screen-reader optimized interfaces.
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: 'var(--accent-emerald)', fontWeight: 'bold' }}>✓</span>
-                  Explicit dietary transparency (Halal, Gluten-Free, Vegan, Allergen disclosures).
-                </li>
-                <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <span style={{ color: 'var(--accent-emerald)', fontWeight: 'bold' }}>✓</span>
-                  WCAG 2.1 AA contrast compliance across all text and interactive elements.
-                </li>
-              </ul>
-            </div>
+              Heirloom Recipes, Royal Hospitality
+            </h2>
+            <p style={{ textShadow: '0 2px 8px rgba(0,0,0,0.75)', color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: '1.8', marginBottom: '1.25rem' }}>
+              In the historic chieftain mansions of Sri Lanka, a "Raalahami" was revered as a guardian of regional culinary culture and noble hospitality. Feasts were curated with unhurried devotion: roasted cinnamon bark from Negombo, fragrant cardamom from the central highlands, and pure virgin coconut milk pressed at sunrise.
+            </p>
+            <p style={{ textShadow: '0 2px 8px rgba(0,0,0,0.75)', color: 'var(--text-muted)', fontSize: '0.98rem', lineHeight: '1.7' }}>
+              Every dish honors that legacy with zero compromises on quality, ethical local sourcing, and warm hospitality for every patron who crosses our threshold.
+            </p>
           </div>
         </div>
       </section>
