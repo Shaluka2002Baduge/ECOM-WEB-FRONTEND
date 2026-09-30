@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Boxes,
   Search,
@@ -6,46 +6,121 @@ import {
   AlertTriangle,
   CheckCircle2,
   Edit3,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react';
 import Button from '../common/Button';
+import RoyalPagination from '../common/RoyalPagination';
 import InventoryModal from './InventoryModal';
+import inventoryService, { FALLBACK_INVENTORY_ITEMS } from '../../services/inventoryService';
 
-const INITIAL_INVENTORY = [
-  { id: 'inv-1', name: 'Fragrant Samba Heritage Rice', category: 'Grains', stock: 120, unit: 'kg', threshold: 40, supplier: 'Polonnaruwa Organic Mills' },
-  { id: 'inv-2', name: 'Fresh Blue Swimmer Lagoon Mud Crab', category: 'Seafood', stock: 18, unit: 'kg', threshold: 25, supplier: 'Negombo Coastal Co-op' },
-  { id: 'inv-3', name: 'Pasture-Raised Black Pork Belly', category: 'Meat', stock: 45, unit: 'kg', threshold: 20, supplier: 'Central Highlands Farm' },
-  { id: 'inv-4', name: 'Raw Sri Lankan Whole Cashew Nuts', category: 'Nuts & Seeds', stock: 12, unit: 'kg', threshold: 15, supplier: 'Puttalam Estate' },
-  { id: 'inv-5', name: 'Charred & Cured Banana Leaves', category: 'Packaging', stock: 350, unit: 'leaves', threshold: 100, supplier: 'Gampaha Growers' },
-  { id: 'inv-6', name: 'Pure Kitul Treacle & Jaggery', category: 'Sweeteners', stock: 28, unit: 'bottles', threshold: 10, supplier: 'Sinharaja Rainforest Guild' },
-  { id: 'inv-7', name: 'Fresh Coconut Cream (Fresh Cold Pressed)', category: 'Dairy/Oils', stock: 65, unit: 'liters', threshold: 30, supplier: 'Kurunegala Coconut Triangle' },
-  { id: 'inv-8', name: 'Traditional Roasted Jaffna Curry Blend', category: 'Spices', stock: 8, unit: 'kg', threshold: 10, supplier: 'Jaffna Heritage Spices' }
-];
+const INVENTORY_PER_PAGE = 8;
 
 export const InventoryManagement = ({ onNotify }) => {
-  const [inventoryItems, setInventoryItems] = useState(INITIAL_INVENTORY);
+  const [inventoryItems, setInventoryItems] = useState(FALLBACK_INVENTORY_ITEMS);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const categories = ['All', 'Grains', 'Seafood', 'Meat', 'Nuts & Seeds', 'Packaging', 'Sweeteners', 'Dairy/Oils', 'Spices', 'Vegetables'];
+  // Load Inventory from Backend Database
+  const fetchInventory = useCallback(async (isSilent = false) => {
+    if (!isSilent) setLoading(true);
+    setIsRefreshing(true);
+    try {
+      const data = await inventoryService.getInventory();
+      if (Array.isArray(data) && data.length > 0) {
+        setInventoryItems(data);
+      }
+    } catch (err) {
+      console.error('[Inventory]: Failed to fetch from database:', err);
+      if (typeof onNotify === 'function') {
+        onNotify({ type: 'warning', title: 'Offline Mode', message: 'Could not reach backend database; showing local inventory.' });
+      }
+    } finally {
+      if (!isSilent) setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [onNotify]);
 
-  const handleAdjustStock = (itemId, delta) => {
-    setInventoryItems((prev) =>
-      prev.map((item) => {
-        if (item.id === itemId) {
-          const newStock = Math.max(0, item.stock + delta);
-          return { ...item, stock: newStock };
-        }
-        return item;
-      })
-    );
+  useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
+
+  // Reset page to 1 on filter or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, searchQuery]);
+
+  const categories = [
+    'All',
+    'Coconuts & Produce',
+    'Beverages & Water Bottles',
+    'Packaging & Containers',
+    'Grains & Rice',
+    'Seafood',
+    'Meat & Poultry',
+    'Spices & Seasoning',
+    'Sweeteners & Treacle',
+    'Dairy & Oils',
+    'Nuts & Seeds',
+    'General'
+  ];
+
+  // Handle Quick Adjust / Restock
+  const handleAdjustStock = async (itemId, delta) => {
+    try {
+      if (!itemId) return;
+
+      // Optimistic UI update
+      setInventoryItems((prev) =>
+        (prev || []).map((item) => {
+          if (item?.id === itemId) {
+            const currentStock = Number(item.stock) || 0;
+            const newStock = Math.max(0, currentStock + delta);
+            return { ...item, stock: newStock };
+          }
+          return item;
+        })
+      );
+
+      // Backend Database Persistence
+      const result = await inventoryService.restock(itemId, delta, false);
+      if (result && result.data) {
+        const updated = result.data;
+        setInventoryItems((prev) =>
+          (prev || []).map((item) =>
+            item?.id === itemId ? { ...item, stock: Number(updated.stock ?? updated.current_stock ?? item.stock) } : item
+          )
+        );
+      }
+
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'success',
+          title: 'Stock Updated',
+          message: `Stock level adjusted by ${delta > 0 ? `+${delta}` : delta} units in database.`
+        });
+      }
+    } catch (err) {
+      console.error('[Inventory]: Error adjusting stock:', err);
+      if (typeof onNotify === 'function') {
+        onNotify({ type: 'error', title: 'Restock Failed', message: err.message || 'Could not persist stock update.' });
+      }
+      fetchInventory(true);
+    }
   };
 
   const handleOpenModal = (item = null) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    try {
+      setSelectedItem(item ? { ...item } : null);
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error('Error opening inventory modal:', err);
+    }
   };
 
   const handleCloseModal = () => {
@@ -54,44 +129,108 @@ export const InventoryManagement = ({ onNotify }) => {
   };
 
   const handleSaveInventory = async (savedData, id) => {
-    if (id) {
-      setInventoryItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, ...savedData, id } : item))
-      );
-      if (onNotify) {
-        onNotify({ type: 'success', title: 'Inventory Updated', message: `${savedData.name} updated successfully.` });
+    try {
+      if (!savedData) return;
+
+      if (id) {
+        // Optimistic UI update
+        setInventoryItems((prev) =>
+          (prev || []).map((item) => (item?.id === id ? { ...item, ...savedData, id } : item))
+        );
+
+        // Backend persistence
+        const result = await inventoryService.updateInventoryItem(id, savedData);
+        if (result && result.data) {
+          const updated = result.data;
+          setInventoryItems((prev) =>
+            (prev || []).map((item) => (item?.id === id ? { ...item, ...updated, id } : item))
+          );
+        }
+
+        if (typeof onNotify === 'function') {
+          onNotify({
+            type: 'success',
+            title: 'Inventory Updated',
+            message: `${savedData.name || 'Item'} updated permanently in database.`
+          });
+        }
+      } else {
+        // Backend persistence for new item
+        const result = await inventoryService.addInventoryItem(savedData);
+        const newItem = result || {
+          id: 'inv-' + Date.now(),
+          ...savedData
+        };
+
+        setInventoryItems((prev) => [newItem, ...(prev || [])]);
+
+        if (typeof onNotify === 'function') {
+          onNotify({
+            type: 'success',
+            title: 'Material Registered',
+            message: `${savedData.name || 'Item'} added to database inventory.`
+          });
+        }
       }
-    } else {
-      const newItem = {
-        id: 'inv-' + Date.now(),
-        ...savedData
-      };
-      setInventoryItems((prev) => [newItem, ...prev]);
-      if (onNotify) {
-        onNotify({ type: 'success', title: 'Material Registered', message: `${savedData.name} added to pantry list.` });
+
+      // Re-sync with backend database
+      await fetchInventory(true);
+    } catch (err) {
+      console.error('[Inventory]: Error saving inventory item:', err);
+      if (typeof onNotify === 'function') {
+        onNotify({ type: 'error', title: 'Save Failed', message: err.message || 'Could not save inventory item to database.' });
       }
+      fetchInventory(true);
     }
   };
 
-  const handleDeleteItem = (item) => {
-    if (window.confirm(`Are you sure you want to remove "${item.name}" from inventory tracking?`)) {
-      setInventoryItems((prev) => prev.filter((i) => i.id !== item.id));
-      if (onNotify) {
-        onNotify({ type: 'info', title: 'Item Removed', message: `${item.name} removed from inventory records.` });
+  const handleDeleteItem = async (item) => {
+    try {
+      if (!item?.id) return;
+      if (window.confirm(`Are you sure you want to remove "${item.name || 'this item'}" from inventory tracking permanently?`)) {
+        // Optimistic UI update
+        setInventoryItems((prev) => (prev || []).filter((i) => i?.id !== item.id));
+
+        // Backend Database Deletion
+        await inventoryService.deleteInventoryItem(item.id);
+
+        if (typeof onNotify === 'function') {
+          onNotify({
+            type: 'info',
+            title: 'Item Removed',
+            message: `${item.name || 'Item'} permanently deleted from database.`
+          });
+        }
+
+        // Re-sync with database
+        await fetchInventory(true);
       }
+    } catch (err) {
+      console.error('[Inventory]: Error deleting inventory item:', err);
+      if (typeof onNotify === 'function') {
+        onNotify({ type: 'error', title: 'Delete Failed', message: err.message || 'Could not delete item from database.' });
+      }
+      fetchInventory(true);
     }
   };
 
-  const filteredItems = inventoryItems.filter((item) => {
+  const safeInventoryList = Array.isArray(inventoryItems) ? inventoryItems : [];
+
+  const filteredItems = safeInventoryList.filter((item) => {
+    if (!item) return false;
     const matchCat = categoryFilter === 'All' || item.category === categoryFilter;
+    const searchLower = (searchQuery || '').toLowerCase();
     const matchSearch =
-      !searchQuery ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.supplier.toLowerCase().includes(searchQuery.toLowerCase());
+      !searchLower ||
+      (item.name || '').toLowerCase().includes(searchLower) ||
+      (item.supplier || '').toLowerCase().includes(searchLower);
     return matchCat && matchSearch;
   });
 
-  const lowStockCount = inventoryItems.filter((i) => i.stock <= i.threshold).length;
+  const totalInventoryPages = Math.max(1, Math.ceil(filteredItems.length / INVENTORY_PER_PAGE));
+  const paginatedItems = filteredItems.slice((currentPage - 1) * INVENTORY_PER_PAGE, currentPage * INVENTORY_PER_PAGE);
+
+  const lowStockCount = safeInventoryList.filter((i) => (Number(i?.stock) || 0) <= (Number(i?.threshold) || 0)).length;
 
   return (
     <section aria-label="Inventory Management" className="fade-in">
@@ -177,10 +316,34 @@ export const InventoryManagement = ({ onNotify }) => {
           </select>
         </div>
 
-        <Button variant="primary" onClick={() => handleOpenModal(null)}>
-          <Plus size={16} style={{ marginRight: '0.4rem' }} />
-          Register Raw Material
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => fetchInventory(false)}
+            disabled={isRefreshing}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.55rem 0.85rem',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-medium)',
+              color: 'var(--text-primary)',
+              cursor: isRefreshing ? 'wait' : 'pointer',
+              fontSize: '0.85rem'
+            }}
+            title="Refresh database records"
+          >
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+            <span>Sync</span>
+          </button>
+
+          <Button variant="primary" onClick={() => handleOpenModal(null)}>
+            <Plus size={16} style={{ marginRight: '0.4rem' }} />
+            Register Raw Material
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -198,22 +361,22 @@ export const InventoryManagement = ({ onNotify }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.map((item) => {
-              const isLow = item.stock <= item.threshold;
+            {paginatedItems.map((item) => {
+              const isLow = (Number(item.stock) || 0) <= (Number(item.threshold) || 0);
               return (
                 <tr key={item.id} style={{ borderBottom: '1px solid rgba(42, 48, 66, 0.4)' }}>
                   <td style={{ padding: '0.85rem 0.5rem' }}>
                     <strong style={{ color: 'var(--text-primary)', display: 'block' }}>{item.name}</strong>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Supplier: {item.supplier}</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Supplier: {item.supplier || 'Local Supplier'}</span>
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    {item.category}
+                    {item.category || 'General'}
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '1rem', fontWeight: '700', color: isLow ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
-                    {item.stock} {item.unit}
+                    {item.stock} {item.unit || 'kg'}
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Min {item.threshold} {item.unit}
+                    Min {item.threshold} {item.unit || 'kg'}
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem' }}>
                     <span
@@ -307,6 +470,14 @@ export const InventoryManagement = ({ onNotify }) => {
           </tbody>
         </table>
       </div>
+
+      <RoyalPagination
+        currentPage={currentPage}
+        totalPages={totalInventoryPages}
+        onPageChange={setCurrentPage}
+        itemsPerPage={INVENTORY_PER_PAGE}
+        totalItems={filteredItems.length}
+      />
 
       <InventoryModal
         isOpen={isModalOpen}

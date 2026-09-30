@@ -25,9 +25,12 @@ import { formatCurrency } from '../../utils/currency';
 import Button from '../common/Button';
 import Input from '../common/Input';
 import Modal from '../common/Modal';
+import RoyalPagination from '../common/RoyalPagination';
 
 const isCompleted = (status) => ['COMPLETED', 'DELIVERED', 'SERVED'].includes(status?.toUpperCase());
 const isCancelled = (status) => ['CANCELLED', 'REJECTED'].includes(status?.toUpperCase());
+
+const ORDERS_PER_PAGE = 8;
 
 /**
  * Dedicated Admin Order Fulfillment & Dispatch Center
@@ -38,10 +41,16 @@ export const OrderManagement = ({ onNotify }) => {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   
   // Single activeTab state: 'all_feasts' | 'delivery' | 'takeaway' | 'dine_in' | 'completed' | 'cancelled'
   const [activeTab, setActiveTab] = useState('all_feasts');
   const [isUpdating, setIsUpdating] = useState(null);
+
+  // Reset pagination on tab or search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery]);
 
   // Cancellation Modal State
   const [cancellingOrder, setCancellingOrder] = useState(null);
@@ -248,8 +257,9 @@ export const OrderManagement = ({ onNotify }) => {
 
   // Conditional next status determination per fulfillment type
   const getNextStatus = (order) => {
-    const type = (order.fulfillment_type || order.fulfillmentMethod || order.orderType || '').toLowerCase();
-    const current = (order.status || '').toUpperCase().replace(/[\s-]+/g, '_');
+    if (!order) return 'COMPLETED';
+    const type = (order?.fulfillment_type || order?.fulfillmentMethod || order?.orderType || '').toLowerCase();
+    const current = (order?.status || '').toUpperCase().replace(/[\s-]+/g, '_');
 
     // HOME DELIVERY FLOW (5 Steps)
     if (type.includes('delivery')) {
@@ -391,6 +401,13 @@ export const OrderManagement = ({ onNotify }) => {
       return true;
     });
   }, [orders, activeTab, searchQuery]);
+
+  // Paginate filtered orders
+  const totalPages = Math.ceil(filteredOrders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (currentPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+  }, [filteredOrders, currentPage]);
 
   // Unified Single Horizontal Tab Items
   const filterTabs = [
@@ -669,7 +686,7 @@ export const OrderManagement = ({ onNotify }) => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {filteredOrders.map((order) => {
+          {paginatedOrders.map((order) => {
             const patronRef =
               order.order_number ||
               order.orderNumber ||
@@ -1078,6 +1095,17 @@ export const OrderManagement = ({ onNotify }) => {
           })}
         </div>
       )}
+
+      <RoyalPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 120, behavior: 'smooth' });
+        }}
+        itemsPerPage={ORDERS_PER_PAGE}
+        totalItems={filteredOrders.length}
+      />
 
       {/* Cancellation Confirmation Modal */}
       <Modal

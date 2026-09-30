@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams, useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   Compass,
   Sparkles,
@@ -14,15 +14,20 @@ import {
   ShoppingBag,
   UtensilsCrossed,
   Calendar,
-  ArrowRight
+  ArrowRight,
+  Search
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import orderService from '../services/orderService';
 import OrderStatusTracker from '../components/order/OrderStatusTracker';
 import OrderSummary from '../components/order/OrderSummary';
-import Input from '../components/common/Input';
 import Button from '../components/common/Button';
+import RoyalPagination from '../components/common/RoyalPagination';
 import apiClient from '../api/apiClient';
 import { formatCurrency } from '../utils/currency';
+import { isValidOrderReference, sanitizeInput } from '../utils/validators';
+
+const ORDERS_PER_PAGE = 6;
 
 /**
  * Accessible Raalahami OrderTrackingPage
@@ -31,40 +36,59 @@ import { formatCurrency } from '../utils/currency';
  * and Patron Feast History (Active, Completed & Cancelled).
  */
 export const OrderTrackingPage = () => {
-  const routeParams = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  const explicitOrderId = routeParams.orderId || searchParams.get('orderId') || '';
-  const lastPlacedId = typeof localStorage !== 'undefined' ? (localStorage.getItem('last_placed_order_id') || '') : '';
-
-  const [orderIdInput, setOrderIdInput] = useState(explicitOrderId || lastPlacedId || '');
+  // Ephemeral In-Memory State Only: Resets naturally on browser reload (F5)
+  const [orderIdInput, setOrderIdInput] = useState('');
+  const [searchedId, setSearchedId] = useState('');
   const [currentOrder, setCurrentOrder] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [validationError, setValidationError] = useState('');
 
-  // Patron Feast History State
+  // Patron Feast History State & Pagination (Authenticated Only)
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyTab, setHistoryTab] = useState('active'); // 'active' | 'completed' | 'cancelled'
+  const [historyPage, setHistoryPage] = useState(1);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
-  // Extract patron email from order or localStorage
-  const patronEmail = useMemo(() => {
-    return (
-      currentOrder?.customerEmail ||
-      currentOrder?.email ||
-      currentOrder?.customer_email ||
-      (typeof localStorage !== 'undefined'
-        ? localStorage.getItem('patron_email') ||
-          localStorage.getItem('user_email') ||
-          localStorage.getItem('userEmail')
-        : null) ||
-      'guest@raalahami.lk'
-    );
-  }, [currentOrder]);
+  // Clean URL query params on mount so reloads never retain or auto-trigger searches
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window.location.search || window.location.hash)) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
-  // Fetch Order History for Patron
+  // Flush tracking state immediately on user logout
+  useEffect(() => {
+    if (!user) {
+      setCurrentOrder(null);
+      setOrderIdInput('');
+      setSearchedId('');
+      setHasSearched(false);
+      setValidationError('');
+      setOrderHistory([]);
+    }
+  }, [user]);
+
+  // Reset page to 1 when switching history tabs
+  useEffect(() => {
+    setHistoryPage(1);
+  }, [historyTab]);
+
+  // Extract patron email ONLY if user is authenticated
+  const patronEmail = useMemo(() => {
+    if (!isAuthenticated || !user) return null;
+    return user.email || user.customerEmail || null;
+  }, [isAuthenticated, user]);
+
+  // Fetch Order History for Authenticated Patron
   const fetchOrderHistory = useCallback(async (email) => {
-    if (!email) return;
+    if (!email || !isAuthenticated) {
+      setOrderHistory([]);
+      return;
+    }
     setIsHistoryLoading(true);
     try {
       let historyList = [];
@@ -77,8 +101,7 @@ export const OrderTrackingPage = () => {
             : res.data.orders || res.data.data || [];
         }
       } catch (apiErr) {
-        // Fallback to session storage demo orders
-        if (typeof sessionStorage !== 'undefined') {
+        if (typeof sessionStorage !== 'undefined' && email) {
           const savedOrders = JSON.parse(sessionStorage.getItem('ralahami_demo_orders') || '[]');
           const matched = savedOrders.filter(
             (o) =>
@@ -86,7 +109,7 @@ export const OrderTrackingPage = () => {
               (o.email && o.email.toLowerCase() === email.toLowerCase()) ||
               (o.customer_email && o.customer_email.toLowerCase() === email.toLowerCase())
           );
-          historyList = matched.length > 0 ? matched : savedOrders;
+          historyList = matched;
         }
       }
 
@@ -96,135 +119,133 @@ export const OrderTrackingPage = () => {
     } finally {
       setIsHistoryLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]);
 
   // 3 Sub-categories for Feast History
   const activeFeasts = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
     return orderHistory.filter((o) => {
       const st = (o.status || '').toUpperCase().trim();
       return !['COMPLETED', 'DELIVERED', 'SERVED', 'CANCELLED', 'REJECTED'].includes(st);
     });
-  }, [orderHistory]);
+  }, [orderHistory, isAuthenticated, user]);
 
   const completedFeasts = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
     return orderHistory.filter((o) => {
       const st = (o.status || '').toUpperCase().trim();
       return ['COMPLETED', 'DELIVERED', 'SERVED'].includes(st);
     });
-  }, [orderHistory]);
+  }, [orderHistory, isAuthenticated, user]);
 
   const cancelledFeasts = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
     return orderHistory.filter((o) => {
       const st = (o.status || '').toUpperCase().trim();
       return ['CANCELLED', 'REJECTED'].includes(st);
     });
-  }, [orderHistory]);
+  }, [orderHistory, isAuthenticated, user]);
 
-  // Determine effective order to track
-  const effectiveTrackingId = useMemo(() => {
-    if (explicitOrderId) return explicitOrderId;
-    // If no explicit ID in URL, check active feasts first
-    if (activeFeasts.length > 0) {
-      return activeFeasts[0].order_number || activeFeasts[0].id;
-    }
-    // If no active feasts, check last placed order
-    if (lastPlacedId) {
-      return lastPlacedId;
-    }
-    return '';
-  }, [explicitOrderId, activeFeasts, lastPlacedId]);
-
-  // Live Auto-Polling for current order and history sync
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchOrderStatus = async (quiet = false) => {
-      if (!effectiveTrackingId) {
-        if (isMounted) {
-          setCurrentOrder(null);
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const cleanId = effectiveTrackingId.toString().replace('#', '').trim();
-        if (!quiet) setIsLoading(true);
-
-        let fetchedOrder = null;
-        try {
-          const res = await apiClient.get(`/orders/track/${cleanId}?t=${Date.now()}`);
-          if (res.data) {
-            fetchedOrder = res.data.order || res.data.data || res.data;
-          }
-        } catch (apiErr) {
-          fetchedOrder = await orderService.getOrderById(cleanId);
-        }
-
-        if (isMounted) {
-          setCurrentOrder(fetchedOrder || null);
-          if (fetchedOrder) {
-            setOrderIdInput(fetchedOrder.order_number || fetchedOrder.id || cleanId);
-            const email =
-              fetchedOrder.customerEmail ||
-              fetchedOrder.email ||
-              fetchedOrder.customer_email ||
-              patronEmail;
-            fetchOrderHistory(email);
-          }
-        }
-      } catch (err) {
-        console.warn('[TRACKING POLL ERROR]', err.message);
-        if (isMounted) setCurrentOrder(null);
-      } finally {
-        if (isMounted && !quiet) setIsLoading(false);
-      }
-    };
-
-    fetchOrderStatus(false);
-
-    const pollInterval = setInterval(() => {
-      fetchOrderStatus(true);
-      if (patronEmail) fetchOrderHistory(patronEmail);
-    }, 3000);
-
-    return () => {
-      isMounted = false;
-      clearInterval(pollInterval);
-    };
-  }, [effectiveTrackingId, fetchOrderHistory, patronEmail]);
-
-  // Initial order history fetch on email availability
-  useEffect(() => {
-    if (patronEmail) {
-      fetchOrderHistory(patronEmail);
-    }
-  }, [patronEmail, fetchOrderHistory]);
-
-  // Auto-switch history tab to completed if no active feasts and completed feasts exist
-  useEffect(() => {
-    if (activeFeasts.length === 0 && completedFeasts.length > 0 && historyTab === 'active') {
-      // If current order is completed or none, switch tab to completed
-      const isCurrCompleted = currentOrder && ['COMPLETED', 'DELIVERED', 'SERVED'].includes((currentOrder.status || '').toUpperCase());
-      if (!currentOrder || isCurrCompleted) {
-        setHistoryTab('completed');
-      }
-    }
-  }, [activeFeasts.length, completedFeasts.length, currentOrder, historyTab]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const cleanId = orderIdInput.trim().replace('#', '');
-    if (cleanId) {
-      navigate(`/tracking/${cleanId}`);
-    }
-  };
-
+  // Unified list for currently selected history tab
   const currentDisplayHistory = useMemo(() => {
     if (historyTab === 'completed') return completedFeasts;
     if (historyTab === 'cancelled') return cancelledFeasts;
     return activeFeasts;
   }, [historyTab, activeFeasts, completedFeasts, cancelledFeasts]);
+
+  // Paginated Feast History
+  const totalHistoryPages = Math.ceil(currentDisplayHistory.length / ORDERS_PER_PAGE) || 1;
+  const paginatedHistory = useMemo(() => {
+    const startIndex = (historyPage - 1) * ORDERS_PER_PAGE;
+    return currentDisplayHistory.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+  }, [currentDisplayHistory, historyPage]);
+
+  // Explicit On-Demand Tracking Execution (Only triggered on user action)
+  const executeTrackOrder = useCallback(async (targetRef) => {
+    const sanitized = sanitizeInput(targetRef || '');
+    const cleanId = sanitized.replace('#', '').trim();
+
+    if (!cleanId || !isValidOrderReference(cleanId)) {
+      setValidationError('Please enter a valid Order Reference Number (e.g. RAALAHAMI-782194).');
+      setCurrentOrder(null);
+      setHasSearched(false);
+      return;
+    }
+
+    setValidationError('');
+    setIsLoading(true);
+    setSearchedId(cleanId);
+    setHasSearched(true);
+
+    try {
+      let fetchedOrder = null;
+      try {
+        const res = await apiClient.get(`/orders/track/${cleanId}?t=${Date.now()}`);
+        if (res.data) {
+          fetchedOrder = res.data.order || res.data.data || res.data;
+        }
+      } catch (apiErr) {
+        fetchedOrder = await orderService.getOrderById(cleanId);
+      }
+
+      if (fetchedOrder && (fetchedOrder.id || fetchedOrder.order_number || fetchedOrder.orderNumber)) {
+        setCurrentOrder(fetchedOrder);
+      } else {
+        setCurrentOrder(null);
+      }
+    } catch (err) {
+      console.warn('[TRACKING FETCH ERROR]', err.message);
+      setCurrentOrder(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const handleSearch = (e) => {
+    if (e) e.preventDefault();
+    executeTrackOrder(orderIdInput);
+  };
+
+  // In-session Live Polling: ONLY active when an order is currently loaded in state
+  useEffect(() => {
+    if (!currentOrder) return;
+    const cleanId = (currentOrder.order_number || currentOrder.id || searchedId || '').toString().replace('#', '').trim();
+    if (!cleanId) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        let updated = null;
+        try {
+          const res = await apiClient.get(`/orders/track/${cleanId}?t=${Date.now()}`);
+          if (res.data) updated = res.data.order || res.data.data || res.data;
+        } catch {
+          updated = await orderService.getOrderById(cleanId);
+        }
+        if (updated && (updated.id || updated.order_number)) {
+          setCurrentOrder(updated);
+        }
+      } catch (ignore) {}
+    }, 4000);
+
+    return () => clearInterval(pollInterval);
+  }, [currentOrder?.id, currentOrder?.order_number, searchedId]);
+
+  // Initial order history fetch on email availability for authenticated patrons
+  useEffect(() => {
+    if (isAuthenticated && patronEmail) {
+      fetchOrderHistory(patronEmail);
+    }
+  }, [patronEmail, fetchOrderHistory, isAuthenticated]);
+
+  // Auto-switch history tab to completed if no active feasts and completed feasts exist
+  useEffect(() => {
+    if (isAuthenticated && activeFeasts.length === 0 && completedFeasts.length > 0 && historyTab === 'active') {
+      const isCurrCompleted = currentOrder && ['COMPLETED', 'DELIVERED', 'SERVED'].includes((currentOrder.status || '').toUpperCase());
+      if (!currentOrder || isCurrCompleted) {
+        setHistoryTab('completed');
+      }
+    }
+  }, [activeFeasts.length, completedFeasts.length, currentOrder, historyTab, isAuthenticated]);
 
   const getFulfillmentMeta = (order) => {
     const raw = (order.fulfillment_type || order.fulfillmentMethod || order.orderType || 'DELIVERY').toUpperCase();
@@ -264,8 +285,67 @@ export const OrderTrackingPage = () => {
   };
 
   return (
-    <div className="order-tracking-page fade-in" style={{ padding: '3.5rem 0 5.5rem 0' }}>
-      <div className="container" style={{ maxWidth: '960px' }}>
+    <div
+      className="order-tracking-page fade-in"
+      style={{
+        padding: '3.5rem 0 5.5rem 0',
+        position: 'relative',
+        minHeight: '100vh',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Dribbble Style Food Delivery Background Layer */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 0,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <img
+          src="/images/food-delivery-bg.jpg"
+          alt="Food Delivery Scooter Background"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            minWidth: '100%',
+            minHeight: '100%',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            opacity: 0.42,
+            filter: 'brightness(90%) contrast(110%) saturate(115%)',
+            transition: 'opacity 0.4s ease'
+          }}
+        />
+
+        {/* Ambient Dark/Light Glassmorphism Scrim for high contrast & text legibility */}
+        <div
+          className="tracking-dribbble-overlay"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(circle at 50% 30%, rgba(11, 15, 25, 0.45) 0%, rgba(11, 15, 25, 0.85) 100%)',
+            backdropFilter: 'blur(2px)',
+            WebkitBackdropFilter: 'blur(2px)'
+          }}
+        />
+      </div>
+
+      <div className="container" style={{ maxWidth: '960px', position: 'relative', zIndex: 1 }}>
         {/* Top return link */}
         <div style={{ marginBottom: '1.5rem' }}>
           <Button
@@ -305,39 +385,51 @@ export const OrderTrackingPage = () => {
         {/* Search Order ID Form */}
         <form
           onSubmit={handleSearch}
-          className="glass-panel"
-          style={{
-            padding: '1.5rem 1.75rem',
-            marginBottom: '2.5rem',
-            display: 'flex',
-            gap: '1rem',
-            alignItems: 'flex-end',
-            flexWrap: 'wrap',
-            border: '1px solid rgba(229, 169, 60, 0.25)',
-            boxShadow: 'var(--shadow-md)'
-          }}
+          className="w-full max-w-2xl mx-auto space-y-2 mb-10"
           aria-label="Search order status form"
         >
-          <div style={{ flex: '1 1 280px' }}>
-            <Input
-              label="Enter Order Reference Number"
-              placeholder="e.g. RAALAHAMI-782194"
-              value={orderIdInput}
-              onChange={(e) => setOrderIdInput(e.target.value)}
-              className="m-0"
-              required
-            />
+          {/* Label placed above the interactive row */}
+          <label className="block text-xs md:text-sm font-semibold tracking-wide text-left" style={{ color: 'var(--text-secondary)' }}>
+            Enter Order Reference Number
+          </label>
+
+          {/* Flex row pairing the Input and Button perfectly on the same height */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={orderIdInput}
+                onChange={(e) => {
+                  setOrderIdInput(e.target.value);
+                  if (validationError) setValidationError('');
+                }}
+                placeholder="e.g. Reference Number"
+                autoComplete="off"
+                spellCheck="false"
+                style={{
+                  backgroundColor: 'var(--bg-glass)',
+                  color: 'var(--text-primary)',
+                  borderColor: 'var(--border-medium)'
+                }}
+                className="w-full h-12 px-4 rounded-xl border focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/25 text-sm md:text-base shadow-sm transition-all"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="h-12 px-6 rounded-xl font-serif text-xs md:text-sm font-bold tracking-wider uppercase bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-neutral-950 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 active:scale-98 transition-all shrink-0 cursor-pointer disabled:opacity-50"
+            >
+              <Compass className="w-4 h-4 text-neutral-950" />
+              <span>{isLoading ? 'SEARCHING...' : 'TRACK ROYAL ORDER'}</span>
+            </button>
           </div>
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            isLoading={isLoading}
-            style={{ fontWeight: '700', padding: '0.75rem 1.5rem' }}
-          >
-            <Compass size={16} style={{ marginRight: '0.4rem' }} />
-            Track Royal Order
-          </Button>
+
+          {validationError && (
+            <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+              <XCircle size={13} /> {validationError}
+            </p>
+          )}
         </form>
 
         {/* Live Order Details & Milestone Tracker */}
@@ -428,9 +520,10 @@ export const OrderTrackingPage = () => {
 
             {/* Order Reference and Database ID Banner */}
             <div
+              className="glass-panel"
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.45)',
-                border: '1px solid rgba(229, 169, 60, 0.3)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-medium)',
                 borderRadius: 'var(--radius-md, 12px)',
                 padding: '0.9rem 1.35rem',
                 margin: '1.5rem 0',
@@ -439,7 +532,7 @@ export const OrderTrackingPage = () => {
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
                 gap: '0.75rem',
-                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.25)'
+                boxShadow: 'var(--shadow-sm)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
@@ -486,7 +579,7 @@ export const OrderTrackingPage = () => {
             {/* Itemized summary */}
             <OrderSummary order={currentOrder} />
           </div>
-        ) : orderIdInput && orderIdInput.trim() !== '' ? (
+        ) : (hasSearched && searchedId) ? (
           <div
             className="glass-panel"
             style={{
@@ -497,11 +590,40 @@ export const OrderTrackingPage = () => {
             }}
           >
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
-              No royal order found with reference <strong style={{ color: 'var(--accent-gold)' }}>{orderIdInput}</strong>.
+              No royal order found with reference <strong style={{ color: 'var(--accent-gold)' }}>{searchedId}</strong>.
             </p>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
-              Please verify your receipt number or select an order from your feast history below.
+              Please verify your receipt reference number or contact royal concierge support if you need assistance.
             </p>
+          </div>
+        ) : !isAuthenticated ? (
+          <div
+            className="glass-panel"
+            style={{
+              textAlign: 'center',
+              padding: '3.5rem 2rem',
+              border: '1px solid rgba(229, 169, 60, 0.25)',
+              borderRadius: 'var(--radius-lg, 16px)',
+              boxShadow: 'var(--shadow-lg)'
+            }}
+          >
+            <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }} aria-hidden="true">
+              👑
+            </div>
+            <div className="badge badge-gold" style={{ marginBottom: '0.75rem', padding: '0.3rem 0.8rem', fontSize: '0.78rem' }}>
+              ROYAL EXPEDITION TRACKER
+            </div>
+            <h3 style={{ fontSize: '1.45rem', color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: '700' }}>
+              Track Your Royal Feast
+            </h3>
+            <p style={{ color: 'var(--text-muted)', maxWidth: '540px', margin: '0 auto 1.75rem auto', fontSize: '0.95rem', lineHeight: '1.5' }}>
+              Please enter your Order Reference Number above and click &quot;TRACK ROYAL ORDER&quot; to view live kitchen preparation and courier expedition status.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <Button variant="primary" size="md" onClick={() => navigate('/menu')}>
+                <Utensils size={16} style={{ marginRight: '0.4rem' }} /> Explore Royal Menu
+              </Button>
+            </div>
           </div>
         ) : (
           <div
@@ -546,13 +668,14 @@ export const OrderTrackingPage = () => {
           </div>
         )}
 
-        {/* PATRON FEAST HISTORY SECTION */}
-        <div id="patron-feast-history" style={{ marginTop: '4rem' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+        {/* PATRON FEAST HISTORY SECTION (AUTHENTICATED PATRONS ONLY) */}
+        {isAuthenticated && user && (
+          <div id="patron-feast-history" style={{ marginTop: '4rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
               flexWrap: 'wrap',
               gap: '1rem',
               marginBottom: '1.5rem',
@@ -585,14 +708,15 @@ export const OrderTrackingPage = () => {
 
           {/* Luxury Tab Bar */}
           <div
+            className="glass-panel"
             style={{
               display: 'flex',
               flexWrap: 'wrap',
               gap: '0.5rem',
-              backgroundColor: 'rgba(0, 0, 0, 0.4)',
+              backgroundColor: 'var(--bg-secondary)',
               padding: '0.4rem',
               borderRadius: 'var(--radius-md, 12px)',
-              border: '1px solid rgba(244, 237, 228, 0.08)',
+              border: '1px solid var(--border-subtle)',
               marginBottom: '1.5rem'
             }}
           >
@@ -728,127 +852,148 @@ export const OrderTrackingPage = () => {
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {currentDisplayHistory.map((item) => {
-                const itemId = (item.order_number || item.id || item.orderNumber || '').toString();
-                const cleanItemId = itemId.replace('#', '').trim();
-                const isSelected = cleanItemId === (effectiveTrackingId || '').toString().replace('#', '').trim();
-                const fMeta = getFulfillmentMeta(item);
-                const FIcon = fMeta.icon;
-                const sBadge = getStatusBadgeStyle(item.status);
-                const SIcon = sBadge.icon;
+            <>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {paginatedHistory.map((item) => {
+                  const itemId = (item.order_number || item.id || item.orderNumber || '').toString();
+                  const cleanItemId = itemId.replace('#', '').trim();
+                  const activeTrackedId = (currentOrder?.order_number || currentOrder?.id || searchedId || '').toString().replace('#', '').trim();
+                  const isSelected = !!activeTrackedId && cleanItemId === activeTrackedId;
+                  const fMeta = getFulfillmentMeta(item);
+                  const FIcon = fMeta.icon;
+                  const sBadge = getStatusBadgeStyle(item.status);
+                  const SIcon = sBadge.icon;
 
-                return (
-                  <div
-                    key={cleanItemId}
-                    className="glass-panel"
-                    style={{
-                      padding: '1.25rem 1.5rem',
-                      border: isSelected
-                        ? '1px solid var(--accent-gold)'
-                        : '1px solid rgba(244, 237, 228, 0.08)',
-                      borderRadius: 'var(--radius-md, 12px)',
-                      boxShadow: isSelected ? '0 0 15px rgba(229, 169, 60, 0.25)' : 'none',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '1rem'
-                    }}
-                  >
-                    {/* Left Details */}
-                    <div style={{ flex: '1 1 320px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--accent-gold)' }}>
-                          #{cleanItemId}
-                        </span>
+                  return (
+                    <div
+                      key={cleanItemId}
+                      className="glass-panel"
+                      style={{
+                        padding: '1.25rem 1.5rem',
+                        border: isSelected
+                          ? '1px solid var(--accent-gold)'
+                          : '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md, 12px)',
+                        boxShadow: isSelected ? 'var(--shadow-glow-gold)' : 'var(--shadow-sm)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '1rem'
+                      }}
+                    >
+                      {/* Left Details */}
+                      <div style={{ flex: '1 1 320px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--accent-gold)' }}>
+                            #{cleanItemId}
+                          </span>
 
-                        <span
-                          className="badge"
-                          style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                            color: fMeta.color,
-                            border: `1px solid ${fMeta.color}40`,
-                            fontSize: '0.75rem',
-                            padding: '0.2rem 0.55rem',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem'
-                          }}
-                        >
-                          <FIcon size={12} /> {fMeta.label}
-                        </span>
+                          <span
+                            className="badge"
+                            style={{
+                              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                              color: fMeta.color,
+                              border: `1px solid ${fMeta.color}40`,
+                              fontSize: '0.75rem',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '9999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <FIcon size={12} /> {fMeta.label}
+                          </span>
 
-                        <span
-                          className="badge"
-                          style={{
-                            backgroundColor: sBadge.bg,
-                            color: sBadge.color,
-                            border: sBadge.border,
-                            fontSize: '0.75rem',
-                            padding: '0.2rem 0.55rem',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem'
-                          }}
-                        >
-                          <SIcon size={12} /> {(item.status || 'PLACED').replace(/_/g, ' ')}
-                        </span>
-                      </div>
-
-                      {/* Items summary */}
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
-                        {item.items && item.items.length > 0
-                          ? item.items.map((it) => `${it.quantity || 1}x ${it.name}`).join(', ')
-                          : 'Royal Selection of Heirlooms'}
-                      </div>
-
-                      {/* Timestamp */}
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <Calendar size={12} />
-                        {item.createdAt || item.created_at ? new Date(item.createdAt || item.created_at).toLocaleString() : 'Recent feast'}
-                      </div>
-                    </div>
-
-                    {/* Right: Total Price & Track Action */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>
-                          Total Amount
+                          <span
+                            className="badge"
+                            style={{
+                              backgroundColor: sBadge.bg,
+                              color: sBadge.color,
+                              border: sBadge.border,
+                              fontSize: '0.75rem',
+                              padding: '0.2rem 0.55rem',
+                              borderRadius: '9999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                          >
+                            <SIcon size={12} /> {(item.status || 'PLACED').replace(/_/g, ' ')}
+                          </span>
                         </div>
-                        <div style={{ fontSize: '1.15rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
-                          {formatCurrency(item.totalPrice || item.totalAmount || item.total_amount || 0)}
+
+                        {/* Items summary */}
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                          {item.items && item.items.length > 0
+                            ? item.items.map((it) => `${it.quantity || 1}x ${it.name}`).join(', ')
+                            : 'Royal Selection of Heirlooms'}
+                        </div>
+
+                        {/* Timestamp */}
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <Calendar size={12} />
+                          {item.createdAt || item.created_at ? new Date(item.createdAt || item.created_at).toLocaleString() : 'Recent feast'}
                         </div>
                       </div>
 
-                      <Button
-                        variant={isSelected ? 'secondary' : 'primary'}
-                        size="sm"
-                        onClick={() => {
-                          setOrderIdInput(cleanItemId);
-                          navigate(`/tracking/${cleanItemId}`);
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
-                        }}
-                        style={{
-                          fontWeight: '700',
-                          padding: '0.45rem 1rem',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem'
-                        }}
-                      >
-                        {isSelected ? 'Currently Tracking' : 'Track Live'} <ArrowRight size={14} />
-                      </Button>
+                      {/* Right: Total Price & Track Action */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '700' }}>
+                            Total Amount
+                          </div>
+                          <div style={{ fontSize: '1.15rem', color: 'var(--accent-gold)', fontWeight: '700' }}>
+                            {formatCurrency(item.totalPrice || item.totalAmount || item.total_amount || 0)}
+                          </div>
+                        </div>
+
+                        <Button
+                          variant={isSelected ? 'secondary' : 'primary'}
+                          size="sm"
+                          onClick={() => {
+                            setOrderIdInput(cleanItemId);
+                            executeTrackOrder(cleanItemId);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          style={{
+                            fontWeight: '700',
+                            padding: '0.45rem 1rem',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem'
+                          }}
+                        >
+                          {isSelected ? 'Currently Tracking' : 'Track Live'} <ArrowRight size={14} />
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              <RoyalPagination
+                currentPage={historyPage}
+                totalPages={totalHistoryPages}
+                onPageChange={(page) => {
+                  setHistoryPage(page);
+                  document.getElementById('patron-feast-history')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                itemsPerPage={ORDERS_PER_PAGE}
+                totalItems={currentDisplayHistory.length}
+              />
+            </>
           )}
         </div>
+      )}
       </div>
+
+      <style>{`
+        html.light .tracking-dribbble-overlay {
+          background: radial-gradient(circle at 50% 30%, rgba(250, 248, 245, 0.5) 0%, rgba(250, 248, 245, 0.88) 100%) !important;
+        }
+      `}</style>
     </div>
   );
 };

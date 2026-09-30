@@ -205,7 +205,7 @@ export const CartDrawer = () => {
               transition: 'all var(--transition-fast)'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.color = '#FFFFFF';
+              e.currentTarget.style.color = 'var(--text-primary)';
               e.currentTarget.style.borderColor = 'var(--accent-gold)';
             }}
             onMouseLeave={(e) => {

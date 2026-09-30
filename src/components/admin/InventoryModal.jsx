@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
+import { isValidTextLength, sanitizeInput } from '../../utils/validators';
 
 /**
  * Isolated Inventory Item Modal Component
@@ -10,12 +11,24 @@ export const InventoryModal = ({
   isOpen,
   onClose,
   item,
-  categories = ['Grains', 'Seafood', 'Meat', 'Nuts & Seeds', 'Packaging', 'Sweeteners', 'Dairy/Oils', 'Spices', 'Vegetables'],
+  categories = [
+    'Grains & Rice',
+    'Seafood',
+    'Meat & Poultry',
+    'Coconuts & Produce',
+    'Beverages & Water Bottles',
+    'Packaging & Containers',
+    'Spices & Seasoning',
+    'Sweeteners & Treacle',
+    'Dairy & Oils',
+    'Nuts & Seeds',
+    'General'
+  ],
   onSaved
 }) => {
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Grains',
+    category: 'Coconuts & Produce',
     stock: 0,
     unit: 'kg',
     threshold: 10,
@@ -54,19 +67,19 @@ export const InventoryModal = ({
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.name || formData.name.trim().length < 2) {
-      errors.name = 'Item name must be at least 2 characters.';
+    if (!isValidTextLength(formData.name, 2, 100)) {
+      errors.name = 'Item name must be between 2 and 100 characters.';
     }
     const numStock = Number(formData.stock);
-    if (isNaN(numStock) || numStock < 0) {
-      errors.stock = 'Stock must be 0 or greater.';
+    if (isNaN(numStock) || numStock < 0 || numStock > 100000) {
+      errors.stock = 'Stock must be between 0 and 100,000.';
     }
     const numThreshold = Number(formData.threshold);
-    if (isNaN(numThreshold) || numThreshold < 0) {
-      errors.threshold = 'Minimum threshold must be 0 or greater.';
+    if (isNaN(numThreshold) || numThreshold < 0 || numThreshold > 10000) {
+      errors.threshold = 'Minimum threshold must be between 0 and 10,000.';
     }
-    if (!formData.supplier || formData.supplier.trim().length < 2) {
-      errors.supplier = 'Please specify an active supplier.';
+    if (!isValidTextLength(formData.supplier, 2, 100)) {
+      errors.supplier = 'Please specify an active supplier (min 2 characters).';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -90,10 +103,10 @@ export const InventoryModal = ({
     setIsSaving(true);
     const payload = {
       ...formData,
-      name: formData.name.trim(),
+      name: sanitizeInput(formData.name),
       stock: Number(formData.stock),
       threshold: Number(formData.threshold),
-      supplier: formData.supplier.trim()
+      supplier: sanitizeInput(formData.supplier)
     };
 
     try {
@@ -219,7 +232,7 @@ export const InventoryModal = ({
                   outline: 'none'
                 }}
               >
-                {['kg', 'g', 'liters', 'ml', 'bottles', 'leaves', 'packets', 'units'].map((u) => (
+                {['kg', 'g', 'liters', 'ml', 'bottles', 'leaves', 'packets', 'pieces', 'crates', 'units'].map((u) => (
                   <option key={u} value={u}>
                     {u}
                   </option>

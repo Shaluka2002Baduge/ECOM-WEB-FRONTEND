@@ -63,10 +63,10 @@ export const MenuCard = ({ item, dish: dishProp }) => {
         display: 'flex',
         flexDirection: 'column',
         borderRadius: '1rem',
-        border: isAvailable ? '1px solid rgba(229, 169, 60, 0.22)' : '1px solid rgba(239, 68, 68, 0.35)',
+        border: isAvailable ? '1px solid var(--border-subtle)' : '1px solid rgba(239, 68, 68, 0.35)',
         overflow: 'hidden',
         transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
-        backgroundColor: isAvailable ? 'var(--bg-surface, #0F1219)' : 'rgba(15, 18, 25, 0.85)',
+        backgroundColor: isAvailable ? 'var(--bg-surface)' : 'var(--bg-secondary)',
         height: '100%',
         boxShadow: 'var(--shadow-md)',
         opacity: isAvailable ? 1 : 0.65,
@@ -75,14 +75,14 @@ export const MenuCard = ({ item, dish: dishProp }) => {
       aria-labelledby={`dish-title-${dish.id}`}
       onMouseEnter={(e) => {
         if (isAvailable) {
-          e.currentTarget.style.borderColor = 'rgba(212, 175, 55, 0.55)';
+          e.currentTarget.style.borderColor = 'var(--accent-gold)';
           e.currentTarget.style.transform = 'translateY(-4px)';
-          e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.6), 0 0 20px rgba(212, 175, 55, 0.25)';
+          e.currentTarget.style.boxShadow = 'var(--shadow-lg), var(--shadow-glow-gold)';
         }
       }}
       onMouseLeave={(e) => {
         if (isAvailable) {
-          e.currentTarget.style.borderColor = 'rgba(229, 169, 60, 0.22)';
+          e.currentTarget.style.borderColor = 'var(--border-subtle)';
           e.currentTarget.style.transform = 'translateY(0)';
           e.currentTarget.style.boxShadow = 'var(--shadow-md)';
         }
@@ -349,7 +349,7 @@ export const MenuCard = ({ item, dish: dishProp }) => {
               ) : (
                 <>
                   <Plus size={16} />
-                  + Add to Feast
+                  Add to Feast
                 </>
               )}
             </Button>

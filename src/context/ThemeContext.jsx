@@ -2,37 +2,34 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ThemeContext = createContext();
 
-const THEME_STORAGE_KEY = 'raalahami_theme';
+const THEME_STORAGE_KEY = 'app_theme';
+const LEGACY_STORAGE_KEY = 'raalahami_theme';
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     try {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
       if (savedTheme === 'light' || savedTheme === 'dark') {
         return savedTheme;
       }
     } catch (e) {
       console.warn('Unable to access localStorage for theme persistence', e);
     }
-    return 'dark'; // Default to Royal Obsidian Dark Mode
+    return 'dark'; // Default to Royal Dark mode as per brand aesthetic
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
-      root.setAttribute('data-theme', 'dark');
-      root.style.colorScheme = 'dark';
-    } else {
-      root.classList.remove('dark');
-      root.classList.add('light');
-      root.setAttribute('data-theme', 'light');
-      root.style.colorScheme = 'light';
-    }
+    const isDark = theme === 'dark';
+
+    root.classList.toggle('dark', isDark);
+    root.classList.toggle('light', !isDark);
+    root.setAttribute('data-theme', theme);
+    root.style.colorScheme = theme;
 
     try {
       localStorage.setItem(THEME_STORAGE_KEY, theme);
+      localStorage.setItem(LEGACY_STORAGE_KEY, theme);
     } catch (e) {
       console.warn('Unable to save theme to localStorage', e);
     }

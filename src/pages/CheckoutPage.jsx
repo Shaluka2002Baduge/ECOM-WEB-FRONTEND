@@ -11,6 +11,14 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 import { formatPrice, formatCurrency } from '../utils/currency';
+import {
+  isValidEmail,
+  isValidPhone,
+  isValidTextLength,
+  isValidQuantity,
+  isValidPrice,
+  sanitizeInput
+} from '../utils/validators';
 
 const HALLS = ['Royal Dining Hall', 'Balcony Court', 'Private Suite'];
 const TABLES_PER_HALL = ['Table 1', 'Table 2', 'Table 3', 'Table 4'];
@@ -264,31 +272,41 @@ export const CheckoutPage = () => {
     }
 
     // 1. Validate Recipient Name explicitly
-    const finalRecipientName = recipientName.trim();
-    if (!finalRecipientName || finalRecipientName.length === 0) {
-      setNameError('Recipient Name is required to personalize your royal feast.');
-      setError('Recipient Name is required to personalize your royal feast.');
+    const finalRecipientName = sanitizeInput(recipientName || '').trim();
+    if (!finalRecipientName || !isValidTextLength(finalRecipientName, 2, 80)) {
+      setNameError('Please enter a valid recipient name (2-80 characters) to personalize your feast.');
+      setError('Please enter a valid recipient name (2-80 characters) to personalize your feast.');
       return;
     }
     setNameError(null);
 
     // 2. Validate Email
     const finalEmail = (patronEmail || user?.email || '').trim().toLowerCase();
-    const emailErr = validateEmail(finalEmail);
-    if (emailErr) {
+    if (!finalEmail || !isValidEmail(finalEmail)) {
+      const emailErr = 'Please enter a valid email address (e.g. patron@raalahami.lk) for order receipts.';
       setEmailError(emailErr);
       setError(emailErr);
       return;
     }
     setEmailError(null);
 
-    // 3. Validate Delivery Address if Delivery selected
-    if (orderType === 'DELIVERY' && !deliveryStreetAddress.trim()) {
-      setError('Delivery Street Address is mandatory for Home Delivery.');
+    // 3. Validate Phone (if provided)
+    const finalPhone = (contactPhone || '').trim();
+    if (finalPhone && !isValidPhone(finalPhone)) {
+      setError('Please enter a valid contact phone number (e.g. 0771234567).');
       return;
     }
 
-    // 4. Validate Dine-In specifics
+    // 4. Validate Delivery Address if Delivery selected
+    if (orderType === 'DELIVERY') {
+      const cleanAddress = (deliveryStreetAddress || '').trim();
+      if (!cleanAddress || !isValidTextLength(cleanAddress, 5, 255)) {
+        setError('Delivery Street Address (at least 5 characters) is mandatory for Home Delivery.');
+        return;
+      }
+    }
+
+    // 5. Validate Dine-In specifics
     if (orderType === 'DINE_IN') {
       if (!isTimeSlotValid) {
         setError('Raalahami dining hours are from 12:30 PM to 11:30 PM.');
@@ -305,13 +323,15 @@ export const CheckoutPage = () => {
 
     const items = cartItems.map((item) => {
       const resolvedId = item.id || item.menu_item_id || item.menuItemId || item._id;
+      const rawPrice = Number(item.price);
+      const rawQty = Number(item.quantity || 1);
       return {
         id: Number(resolvedId) || resolvedId,
         menu_item_id: Number(resolvedId) || resolvedId,
         menuItemId: Number(resolvedId) || resolvedId,
-        name: item.name || item.title,
-        price: Number(item.price),
-        quantity: Number(item.quantity || 1)
+        name: sanitizeInput(item.name || item.title || 'Signature Dish'),
+        price: isValidPrice(rawPrice) ? rawPrice : 0,
+        quantity: isValidQuantity(rawQty) ? rawQty : 1
       };
     });
 
@@ -333,8 +353,6 @@ export const CheckoutPage = () => {
     } else if (selectedPaymentMethod === 'WALLET' || selectedPaymentMethod === 'DIGITAL_WALLET') {
       finalPaymentMethod = 'Digital Wallet';
     }
-
-    const finalPhone = (contactPhone || '').trim();
 
     // 5. ORDER SUBMISSION PAYLOAD
     const payload = {
@@ -442,11 +460,6 @@ export const CheckoutPage = () => {
         '';
 
       const cleanRef = String(rawRef).replace('#', '').trim();
-
-      if (typeof localStorage !== 'undefined' && cleanRef) {
-        localStorage.setItem('last_placed_order_id', cleanRef);
-        localStorage.setItem('patron_email', finalEmail);
-      }
 
       // Determine fulfillment type
       const rawFulfillmentType =

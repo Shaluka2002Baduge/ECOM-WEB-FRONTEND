@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
+import { isValidEmail, isValidPhone, isValidTextLength, sanitizeInput } from '../../utils/validators';
 
 const HALLS = ['Royal Dining Hall', 'Balcony Court', 'Private Suite'];
 const TABLES_PER_HALL = ['Table 1', 'Table 2', 'Table 3', 'Table 4'];
@@ -82,17 +83,14 @@ export const ReservationModal = ({
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.guest || formData.guest.trim().length < 2) {
-      errors.guest = 'Guest name is required (min 2 characters).';
+    if (!isValidTextLength(formData.guest, 2, 80)) {
+      errors.guest = 'Guest name is required (2-80 characters).';
     }
-    if (!formData.phone || formData.phone.trim().length < 7) {
-      errors.phone = 'Valid contact phone number is required.';
+    if (!formData.phone || !isValidPhone(formData.phone)) {
+      errors.phone = 'Valid contact phone number is required (e.g. +94771234567 or 0771234567).';
     }
-    if (formData.email && formData.email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.email.trim())) {
-        errors.email = 'Please enter a valid email address.';
-      }
+    if (formData.email && formData.email.trim() && !isValidEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address.';
     }
     if (!formData.date) {
       errors.date = 'Reservation date is required.';
@@ -126,12 +124,17 @@ export const ReservationModal = ({
     if (!validateForm()) return;
 
     setIsSaving(true);
+    const cleanGuest = sanitizeInput(formData.guest);
+    const cleanEmail = sanitizeInput(formData.email);
+    const cleanPhone = sanitizeInput(formData.phone);
+    const cleanNotes = sanitizeInput(formData.notes || '');
+
     const payload = {
-      guest: formData.guest.trim(),
-      customerName: formData.guest.trim(),
-      phone: formData.phone.trim(),
-      email: formData.email.trim() || 'patron@raalahami.lk',
-      customerEmail: formData.email.trim() || 'patron@raalahami.lk',
+      guest: cleanGuest,
+      customerName: cleanGuest,
+      phone: cleanPhone,
+      email: cleanEmail || 'patron@raalahami.lk',
+      customerEmail: cleanEmail || 'patron@raalahami.lk',
       date: formData.date,
       diningDate: formData.date,
       dining_date: formData.date,
@@ -140,6 +143,7 @@ export const ReservationModal = ({
       time_slot: formData.time.trim(),
       guests: Number(formData.guests),
       partySize: Number(formData.guests),
+      party_size: Number(formData.guests),
       hall: formData.hall,
       area: formData.hall,
       seatingPreference: formData.hall,
@@ -148,7 +152,7 @@ export const ReservationModal = ({
       assignedTable: formData.table,
       table_number: formData.table,
       tableNumber: formData.table,
-      notes: formData.notes?.trim() || 'Walk-In Patron Booking',
+      notes: cleanNotes || 'Walk-In Patron Booking',
       status: reservation?.status || 'CONFIRMED'
     };
 
@@ -168,7 +172,7 @@ export const ReservationModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={reservation ? `Modify Reservation #${reservation.id}` : '+ Book Table Reservation (Walk-In / Phone)'}
+      title={reservation ? `Modify Reservation #${reservation.id}` : 'Book Table Reservation (Walk-In / Phone)'}
       maxWidth="640px"
     >
       <form
@@ -516,7 +520,7 @@ export const ReservationModal = ({
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={isSaving}>
-            {isSaving ? 'Submitting...' : reservation ? 'Update Booking' : '+ Confirm Reservation'}
+            {isSaving ? 'Submitting...' : reservation ? 'Update Booking' : 'Confirm Reservation'}
           </Button>
         </div>
       </form>

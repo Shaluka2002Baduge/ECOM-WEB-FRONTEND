@@ -7,9 +7,9 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import axios from 'axios';
-import { apiClient } from '../../api/apiClient';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
+import { isValidPrice, isValidTextLength, sanitizeInput } from '../../utils/validators';
 
 const DEFAULT_DISH_IMAGE = '/images/default-dish.jpg';
 const FALLBACK_PREVIEW = 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80';
@@ -131,18 +131,19 @@ export const CreateDishModal = ({
   // Client Validation Logic
   const validateForm = () => {
     const errors = {};
-    if (!formData.name || formData.name.trim().length < 3) {
-      errors.name = 'Dish name must be at least 3 characters long.';
+    const cleanName = sanitizeInput(formData.name || '');
+    if (!cleanName || !isValidTextLength(cleanName, 3, 100)) {
+      errors.name = 'Dish name must be between 3 and 100 characters.';
     }
-    const numPrice = Number(formData.price);
-    if (!formData.price || isNaN(numPrice) || numPrice <= 0) {
-      errors.price = 'Please enter a valid price in LKR (e.g., 650, 1550).';
+    if (!isValidPrice(formData.price)) {
+      errors.price = 'Please enter a valid price in LKR between 1 and 1,000,000.';
     }
     if (!formData.category_id || isNaN(Number(formData.category_id))) {
       errors.category_id = 'Please select a menu category.';
     }
-    if (!formData.description || formData.description.trim().length < 10) {
-      errors.description = 'Description must be at least 10 characters long.';
+    const cleanDesc = sanitizeInput(formData.description || '');
+    if (!cleanDesc || !isValidTextLength(cleanDesc, 10, 1000)) {
+      errors.description = 'Description must be between 10 and 1000 characters.';
     }
     if (formData.spice_level < 0 || formData.spice_level > 5) {
       errors.spice_level = 'Spice level must be between 0 and 5.';

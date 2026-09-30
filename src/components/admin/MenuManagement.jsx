@@ -14,9 +14,11 @@ import { apiClient } from '../../api/apiClient';
 import { formatCurrency } from '../../utils/currency';
 import Button from '../common/Button';
 import Alert from '../common/Alert';
+import RoyalPagination from '../common/RoyalPagination';
 import { CreateDishModal } from './CreateDishModal';
 
 const DEFAULT_DISH_IMAGE = 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?auto=format&fit=crop&w=800&q=80';
+const DISHES_PER_PAGE = 8;
 
 const CATEGORY_MAP = {
   1: 'Mains',
@@ -52,7 +54,13 @@ export const MenuManagement = ({ onNotify }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [menuSearch, setMenuSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [categories, setCategories] = useState(['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts']);
+
+  // Reset pagination on category or search filter change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery, menuSearch]);
 
   // Modal State
   const [isDishModalOpen, setIsDishModalOpen] = useState(false);
@@ -322,6 +330,10 @@ export const MenuManagement = ({ onNotify }) => {
     return matchCat && matchSearch;
   });
 
+  // Paginate filtered dishes
+  const totalPages = Math.ceil(filteredDishes.length / DISHES_PER_PAGE);
+  const paginatedDishes = filteredDishes.slice((currentPage - 1) * DISHES_PER_PAGE, currentPage * DISHES_PER_PAGE);
+
   return (
     <div className="menu-management-wrapper fade-in">
       {/* Local Alert Notification Banner */}
@@ -471,7 +483,7 @@ export const MenuManagement = ({ onNotify }) => {
                 </td>
               </tr>
             ) : (
-              filteredDishes.map((dish) => {
+              paginatedDishes.map((dish) => {
                 const dishImg = dish.image_url || dish.image || dish.imageUrl || DEFAULT_DISH_IMAGE;
                 const isAvailable = dish.is_available ?? dish.available ?? true;
                 const spiceCount = dish.spice_level !== undefined ? Number(dish.spice_level) : (dish.spiceLevel !== undefined ? Number(dish.spiceLevel) : 0);
@@ -636,6 +648,17 @@ export const MenuManagement = ({ onNotify }) => {
           </tbody>
         </table>
       </div>
+
+      <RoyalPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 120, behavior: 'smooth' });
+        }}
+        itemsPerPage={DISHES_PER_PAGE}
+        totalItems={filteredDishes.length}
+      />
 
       {/* ISOLATED DISH FORM MODAL (Prevents remounting and single-character typing bug) */}
       <CreateDishModal

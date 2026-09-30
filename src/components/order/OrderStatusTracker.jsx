@@ -416,16 +416,16 @@ export const OrderStatusTracker = ({
                     backgroundColor: isStepDone
                       ? '#10B981'
                       : isCurrent
-                      ? 'var(--accent-gold, #E5A93C)'
-                      : 'rgba(35, 27, 20, 0.85)',
-                    color: isStepDone || isCurrent ? '#0B0D11' : 'var(--text-muted, #7A7265)',
+                      ? 'var(--accent-gold)'
+                      : 'var(--bg-secondary)',
+                    color: isStepDone || isCurrent ? '#0B0D11' : 'var(--text-muted)',
                     border: isCurrent
-                      ? '3px solid #FFF'
+                      ? '3px solid var(--border-focus)'
                       : isStepDone
                       ? '2px solid #10B981'
-                      : '1px solid rgba(244, 237, 228, 0.15)',
+                      : '1px solid var(--border-medium)',
                     boxShadow: isCurrent
-                      ? '0 0 20px rgba(229, 169, 60, 0.6), 0 4px 12px rgba(0,0,0,0.5)'
+                      ? '0 0 20px rgba(229, 169, 60, 0.6), 0 4px 12px rgba(0,0,0,0.2)'
                       : isStepDone
                       ? '0 0 12px rgba(16, 185, 129, 0.35)'
                       : 'none',
@@ -455,7 +455,7 @@ export const OrderStatusTracker = ({
                       backgroundColor:
                         index < activeStep || isFullyCompleted
                           ? '#10B981'
-                          : 'rgba(244, 237, 228, 0.12)',
+                          : 'var(--border-subtle)',
                       transition: 'background-color 0.4s ease',
                       zIndex: 1
                     }}

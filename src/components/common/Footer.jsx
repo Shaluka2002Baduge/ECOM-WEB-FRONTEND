@@ -10,11 +10,12 @@ const Footer = () => {
     <footer
       role="contentinfo"
       style={{
-        backgroundColor: '#070A12',
+        backgroundColor: 'var(--bg-secondary)',
         borderTop: '1px solid var(--border-subtle)',
         marginTop: 'auto',
         paddingTop: '4rem',
-        paddingBottom: '2.5rem'
+        paddingBottom: '2.5rem',
+        transition: 'background-color var(--transition-normal)'
       }}
     >
       <div className="container">
@@ -46,7 +47,7 @@ const Footer = () => {
               >
                 R
               </div>
-              <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '1.3rem', color: '#FFFFFF', letterSpacing: '0.04em' }}>
+              <span style={{ fontFamily: 'var(--font-serif)', fontWeight: '800', fontSize: '1.3rem', color: 'var(--text-primary)', letterSpacing: '0.04em' }}>
                 RAALAHAMI
               </span>
             </div>
@@ -68,7 +69,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/menu" style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-                  Royal A La Carte Menu
+                  Royal Menu
                 </Link>
               </li>
               <li>

@@ -24,8 +24,12 @@ export const StaffManagement = ({ onNotify }) => {
   const [selectedStaff, setSelectedStaff] = useState(null);
 
   const handleOpenModal = (staff = null) => {
-    setSelectedStaff(staff);
-    setIsModalOpen(true);
+    try {
+      setSelectedStaff(staff ? { ...staff } : null);
+      setIsModalOpen(true);
+    } catch (err) {
+      console.error('Error opening staff modal:', err);
+    }
   };
 
   const handleCloseModal = () => {
@@ -34,49 +38,67 @@ export const StaffManagement = ({ onNotify }) => {
   };
 
   const handleSaveStaff = async (savedData, id) => {
-    if (id) {
-      setStaffMembers((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, ...savedData, id } : s))
-      );
-      if (onNotify) {
-        onNotify({ type: 'success', title: 'Staff Updated', message: `${savedData.name} record updated.` });
+    try {
+      if (!savedData) return;
+      if (id) {
+        setStaffMembers((prev) =>
+          (prev || []).map((s) => (s?.id === id ? { ...s, ...savedData, id } : s))
+        );
+        if (typeof onNotify === 'function') {
+          onNotify({ type: 'success', title: 'Staff Updated', message: `${savedData.name || 'Staff'} record updated.` });
+        }
+      } else {
+        const newStaff = {
+          id: 'st-' + Date.now(),
+          status: 'Active Shift',
+          ...savedData
+        };
+        setStaffMembers((prev) => [newStaff, ...(prev || [])]);
+        if (typeof onNotify === 'function') {
+          onNotify({
+            type: 'success',
+            title: 'Staff Member Added',
+            message: `${savedData.name || 'Staff'} assigned role ${savedData.role} with backend RBAC credentials.`
+          });
+        }
       }
-    } else {
-      const newStaff = {
-        id: 'st-' + Date.now(),
-        status: 'Active Shift',
-        ...savedData
-      };
-      setStaffMembers((prev) => [newStaff, ...prev]);
-      if (onNotify) {
-        onNotify({
-          type: 'success',
-          title: 'Staff Member Added',
-          message: `${savedData.name} assigned role ${savedData.role} with backend RBAC credentials.`
-        });
+    } catch (err) {
+      console.error('Error saving staff:', err);
+      if (typeof onNotify === 'function') {
+        onNotify({ type: 'error', title: 'Save Failed', message: 'Could not update staff roster.' });
       }
     }
   };
 
   const handleUpdateStaffRole = (staffId, newRole) => {
-    setStaffMembers((prev) =>
-      prev.map((s) => (s.id === staffId ? { ...s, role: newRole } : s))
-    );
-    if (onNotify) {
-      onNotify({
-        type: 'info',
-        title: 'Role Privileges Updated',
-        message: 'Staff clearance level modified.'
-      });
+    try {
+      if (!staffId) return;
+      setStaffMembers((prev) =>
+        (prev || []).map((s) => (s?.id === staffId ? { ...s, role: newRole } : s))
+      );
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'info',
+          title: 'Role Privileges Updated',
+          message: 'Staff clearance level modified.'
+        });
+      }
+    } catch (err) {
+      console.error('Error updating staff role:', err);
     }
   };
 
   const handleDeleteStaff = (staff) => {
-    if (window.confirm(`Are you sure you want to revoke credentials for "${staff.name}"?`)) {
-      setStaffMembers((prev) => prev.filter((s) => s.id !== staff.id));
-      if (onNotify) {
-        onNotify({ type: 'info', title: 'Staff Access Revoked', message: `${staff.name} removed from roster.` });
+    try {
+      if (!staff?.id) return;
+      if (window.confirm(`Are you sure you want to revoke credentials for "${staff.name || 'this member'}"?`)) {
+        setStaffMembers((prev) => (prev || []).filter((s) => s?.id !== staff.id));
+        if (typeof onNotify === 'function') {
+          onNotify({ type: 'info', title: 'Staff Access Revoked', message: `${staff.name || 'Staff'} removed from roster.` });
+        }
       }
+    } catch (err) {
+      console.error('Error removing staff:', err);
     }
   };
 

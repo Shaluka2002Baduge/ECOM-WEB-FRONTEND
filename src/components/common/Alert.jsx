@@ -63,7 +63,7 @@ const Alert = ({
         {current.icon}
       </span>
       <div style={{ flex: 1 }}>
-        {title && <strong style={{ display: 'block', marginBottom: '0.2rem', color: '#FFFFFF' }}>{title}</strong>}
+        {title && <strong style={{ display: 'block', marginBottom: '0.2rem', color: current.text }}>{title}</strong>}
         <div style={{ fontSize: '0.9rem', color: current.text }}>{message}</div>
       </div>
       {onDismiss && (

@@ -133,6 +133,15 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('ralahami_auth_token');
       localStorage.removeItem('ralahami_virtual_user');
       localStorage.removeItem('token');
+      localStorage.removeItem('last_placed_order_id');
+      localStorage.removeItem('last_tracked_order');
+      localStorage.removeItem('active_order_ref');
+      localStorage.removeItem('patron_email');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('userEmail');
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.removeItem('ralahami_demo_orders');
+      }
       setUser(null);
       setError(null);
       setIsLoading(false);

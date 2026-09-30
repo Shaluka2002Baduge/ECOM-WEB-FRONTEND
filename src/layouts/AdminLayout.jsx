@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link, Outlet } from 'react-router-dom';
 import {
   Utensils,
   Boxes,
@@ -15,20 +15,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Alert from '../components/common/Alert';
-import MenuManagement from '../components/admin/MenuManagement';
-import InventoryManagement from '../components/admin/InventoryManagement';
-import ReservationManagement from '../components/admin/ReservationManagement';
-import StaffManagement from '../components/admin/StaffManagement';
-import ReportsManagement from '../components/admin/ReportsManagement';
-import OrderManagement from '../components/admin/OrderManagement';
+import ThemeToggle from '../components/common/ThemeToggle';
 
 /**
  * Dedicated Full-Height SaaS Admin Layout
  * Completely isolated from Customer Navbar & Footer.
  * Features:
- * - Sleek, fixed/collapsible dark luxury sidebar
+ * - Sleek, fixed/collapsible dark luxury sidebar with deep URL-based routing
  * - Top Header with Admin title, live clock, logged-in admin email, and direct Logout
- * - Modular dynamic views (Orders Fulfillment, Menu, Inventory, Reservations, Staff RBAC, Financial Reports)
+ * - Modular dynamic views rendered via React Router Outlet
  * - Zero nested component definitions: all modals and forms isolated in standalone modules
  */
 export const AdminLayout = () => {
@@ -36,12 +31,19 @@ export const AdminLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Active section state: 'orders' | 'menu' | 'inventory' | 'reservations' | 'staff' | 'reports'
-  const [activeSection, setActiveSection] = useState(() => {
-    if (location.pathname.includes('/orders')) return 'orders';
-    if (role === 'KITCHEN_STAFF') return 'orders';
-    return 'orders'; // Default primary operational view
-  });
+  // Derive active section directly from the current browser URL
+  const getActiveSection = () => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes('/admin/menu')) return 'menu';
+    if (path.includes('/admin/inventory')) return 'inventory';
+    if (path.includes('/admin/reservations')) return 'reservations';
+    if (path.includes('/admin/staff')) return 'staff';
+    if (path.includes('/admin/reports')) return 'reports';
+    if (path.includes('/admin/orders')) return 'orders';
+    return 'orders';
+  };
+
+  const activeSection = getActiveSection();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [notification, setNotification] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -52,52 +54,51 @@ export const AdminLayout = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync active section if URL changes
-  useEffect(() => {
-    if (location.pathname.includes('/orders')) {
-      setActiveSection('orders');
-    }
-  }, [location.pathname]);
-
   const handleLogout = async () => {
     await logout();
     navigate('/login', { replace: true });
   };
 
-  // Navigation Items with Icons from lucide-react
+  // Navigation Items with Icons from lucide-react and canonical nested routes
   const navItems = [
     {
       id: 'orders',
+      path: '/admin/orders',
       label: 'Order Fulfillment',
       icon: ShoppingBag,
       description: 'Live dispatch, delivery & takeaway'
     },
     {
       id: 'menu',
+      path: '/admin/menu',
       label: 'Menu Management',
       icon: Utensils,
       description: 'Dishes, pricing & availability'
     },
     {
       id: 'inventory',
+      path: '/admin/inventory',
       label: 'Inventory & Stock',
       icon: Boxes,
       description: 'Pantry tracking & raw materials'
     },
     {
       id: 'reservations',
+      path: '/admin/reservations',
       label: 'Reservations & Tables',
       icon: CalendarDays,
       description: 'Floor plan, seating & guest bookings'
     },
     {
       id: 'staff',
+      path: '/admin/staff',
       label: 'Staff & Role Clearance',
       icon: ShieldCheck,
       description: 'RBAC permissions & team roster'
     },
     {
       id: 'reports',
+      path: '/admin/reports',
       label: 'Financial & Reports',
       icon: TrendingUp,
       description: 'Sales velocity, revenue & analytics'
@@ -110,19 +111,20 @@ export const AdminLayout = () => {
       style={{
         display: 'flex',
         minHeight: '100vh',
-        backgroundColor: '#070A12',
-        color: '#F8FAFC'
+        backgroundColor: 'var(--bg-primary)',
+        color: 'var(--text-primary)',
+        transition: 'background-color var(--transition-normal), color var(--transition-normal)'
       }}
     >
       {/* =================================================================== */}
-      {/* 1. DEDICATED DARK LUXURY ADMIN SIDEBAR                              */}
+      {/* 1. DEDICATED LUXURY ADMIN SIDEBAR                                   */}
       {/* =================================================================== */}
       <aside
         className={`admin-sidebar ${isMobileSidebarOpen ? 'open' : ''}`}
         style={{
           width: '270px',
           flexShrink: 0,
-          backgroundColor: '#0F1219',
+          backgroundColor: 'var(--bg-secondary)',
           borderRight: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
@@ -130,7 +132,7 @@ export const AdminLayout = () => {
           top: 0,
           height: '100vh',
           zIndex: 950,
-          transition: 'transform 0.25s ease-in-out'
+          transition: 'transform 0.25s ease-in-out, background-color var(--transition-normal)'
         }}
       >
         {/* Brand Crest Header */}
@@ -240,7 +242,7 @@ export const AdminLayout = () => {
                 key={item.id}
                 type="button"
                 onClick={() => {
-                  setActiveSection(item.id);
+                  navigate(item.path);
                   setIsMobileSidebarOpen(false);
                 }}
                 style={{
@@ -303,7 +305,7 @@ export const AdminLayout = () => {
           style={{
             padding: '1rem',
             borderTop: '1px solid var(--border-subtle)',
-            backgroundColor: '#0B0D11',
+            backgroundColor: 'var(--bg-primary)',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.75rem'
@@ -340,7 +342,7 @@ export const AdminLayout = () => {
         <header
           style={{
             height: '70px',
-            backgroundColor: '#0F1219',
+            backgroundColor: 'var(--bg-secondary)',
             borderBottom: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
@@ -348,7 +350,8 @@ export const AdminLayout = () => {
             padding: '0 1.75rem',
             position: 'sticky',
             top: 0,
-            zIndex: 900
+            zIndex: 900,
+            transition: 'background-color var(--transition-normal)'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -381,8 +384,11 @@ export const AdminLayout = () => {
             </div>
           </div>
 
-          {/* Right Header Controls: Time, Admin Email, Logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          {/* Right Header Controls: Theme Toggle, Time, Admin Email, Logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Global Theme Toggle */}
+            <ThemeToggle id="admin-theme-toggle-btn" />
+
             {/* Live Clock */}
             <div
               className="admin-clock"
@@ -460,31 +466,9 @@ export const AdminLayout = () => {
           </div>
         )}
 
-        {/* Dynamic Content Area (Modular Sub-Views) */}
+        {/* Dynamic Content Area (Modular Sub-Views via React Router Outlet) */}
         <main style={{ flex: 1, padding: '1.75rem' }}>
-          {activeSection === 'orders' && (
-            <OrderManagement onNotify={setNotification} />
-          )}
-
-          {activeSection === 'menu' && (
-            <MenuManagement onNotify={setNotification} />
-          )}
-
-          {activeSection === 'inventory' && (
-            <InventoryManagement onNotify={setNotification} />
-          )}
-
-          {activeSection === 'reservations' && (
-            <ReservationManagement onNotify={setNotification} />
-          )}
-
-          {activeSection === 'staff' && (
-            <StaffManagement onNotify={setNotification} />
-          )}
-
-          {activeSection === 'reports' && (
-            <ReportsManagement />
-          )}
+          <Outlet context={{ setNotification, onNotify: setNotification }} />
         </main>
       </div>
 

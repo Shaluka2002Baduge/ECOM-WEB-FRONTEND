@@ -20,7 +20,10 @@ import {
 import axios from 'axios';
 import { apiClient } from '../../api/apiClient';
 import Button from '../common/Button';
+import RoyalPagination from '../common/RoyalPagination';
 import ReservationModal from './ReservationModal';
+
+const RESERVATIONS_PER_PAGE = 8;
 
 // 3 Distinct Halls with 4 Tables in Each (12 Total Tables)
 const INITIAL_HALL_STRUCTURE = [
@@ -116,8 +119,8 @@ export const ReservationManagement = ({ onNotify }) => {
     [onNotify]
   );
 
-  // Helper: flatten all 12 tables for modals and lookup
-  const allTablesList = halls.flatMap((h) => h.tables);
+  // Helper: flatten all tables for modals and lookup safely
+  const allTablesList = (halls || []).flatMap((h) => h?.tables || []);
 
   // Synchronize 3-hall table states with active reservations list
   const syncHallsWithReservations = useCallback((resList, currentHalls) => {
@@ -663,6 +666,13 @@ export const ReservationManagement = ({ onNotify }) => {
     setSelectedRes(null);
   };
 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset pagination on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
   // Filtered reservations for bottom roster
   const filteredReservations = reservations.filter((r) => {
     const q = searchQuery.toLowerCase().trim();
@@ -681,6 +691,10 @@ export const ReservationManagement = ({ onNotify }) => {
       (r.notes && r.notes.toLowerCase().includes(q))
     );
   });
+
+  // Paginated reservations
+  const totalReservationPages = Math.ceil(filteredReservations.length / RESERVATIONS_PER_PAGE);
+  const paginatedReservations = filteredReservations.slice((currentPage - 1) * RESERVATIONS_PER_PAGE, currentPage * RESERVATIONS_PER_PAGE);
 
   return (
     <section aria-label="Reservations and Floor Management" className="fade-in">
@@ -753,7 +767,7 @@ export const ReservationManagement = ({ onNotify }) => {
 
           <Button variant="primary" onClick={() => handleOpenModal(null)}>
             <Plus size={16} style={{ marginRight: '0.4rem' }} />
-            + Book Table Reservation
+            Book Table Reservation
           </Button>
         </div>
       </div>
@@ -1043,7 +1057,7 @@ export const ReservationManagement = ({ onNotify }) => {
                   </td>
                 </tr>
               ) : (
-                filteredReservations.map((res) => {
+                paginatedReservations.map((res) => {
                   const isCompleted = res.status === 'COMPLETED';
 
                   return (
@@ -1188,6 +1202,14 @@ export const ReservationManagement = ({ onNotify }) => {
             </tbody>
           </table>
         </div>
+
+        <RoyalPagination
+          currentPage={currentPage}
+          totalPages={totalReservationPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={RESERVATIONS_PER_PAGE}
+          totalItems={filteredReservations.length}
+        />
       </div>
 
       {/* Walk-In & Table Booking Modal */}

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Clock, Users, MapPin, Sparkles, Check, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Calendar, Clock, Users, MapPin, Sparkles, Check, CheckCircle2, ShieldCheck, AlertCircle } from 'lucide-react';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import { isValidEmail, isValidPhone, isValidTextLength, sanitizeInput } from '../utils/validators';
 
 /**
  * Accessible Raalahami ReservationPage
@@ -27,6 +28,7 @@ export const ReservationPage = () => {
     accessibilityRequests: ''
   });
 
+  const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successReservation, setSuccessReservation] = useState(null);
 
@@ -66,6 +68,13 @@ export const ReservationPage = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    }
   };
 
   const handleSelectGuests = (num) => {
@@ -80,14 +89,45 @@ export const ReservationPage = () => {
     setFormData((prev) => ({ ...prev, area: areaId }));
   };
 
+  const validateReservation = () => {
+    const errors = {};
+    if (!isValidTextLength(formData.name, 2, 80)) {
+      errors.name = 'Please provide a valid full name (2-80 characters).';
+    }
+    if (!isValidEmail(formData.email)) {
+      errors.email = 'Please provide a valid email address.';
+    }
+    if (!isValidPhone(formData.phone)) {
+      errors.phone = 'Please provide a valid contact number (e.g. +94771234567 or 0771234567).';
+    }
+    if (!formData.date) {
+      errors.date = 'Reservation date is required.';
+    }
+    if (!formData.time) {
+      errors.time = 'Reservation dining time is required.';
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!validateReservation()) return;
+
     setIsSubmitting(true);
+
+    const cleanData = {
+      ...formData,
+      name: sanitizeInput(formData.name),
+      email: sanitizeInput(formData.email),
+      phone: sanitizeInput(formData.phone),
+      accessibilityRequests: sanitizeInput(formData.accessibilityRequests || '')
+    };
 
     setTimeout(() => {
       setIsSubmitting(false);
       setSuccessReservation({
-        ...formData,
+        ...cleanData,
         bookingRef: 'RAALAHAMI-RES-' + Math.floor(100000 + Math.random() * 900000)
       });
     }, 600);
@@ -466,6 +506,7 @@ export const ReservationPage = () => {
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="e.g. Shaluka Dulanjana"
+                error={formErrors.name}
                 required
               />
 
@@ -476,6 +517,7 @@ export const ReservationPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="patron@example.com"
+                error={formErrors.email}
                 required
               />
 
@@ -486,6 +528,7 @@ export const ReservationPage = () => {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+94 77 123 4567"
+                error={formErrors.phone}
                 required
               />
             </div>

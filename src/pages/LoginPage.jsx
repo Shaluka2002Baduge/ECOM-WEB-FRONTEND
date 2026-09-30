@@ -5,6 +5,7 @@ import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
+import { isValidEmail } from '../utils/validators';
 
 /**
  * Accessible LoginPage / Patron Portal
@@ -42,13 +43,24 @@ export const LoginPage = () => {
     setLocalError(null);
     setSuccessNotification(null);
 
+    const cleanEmail = (email || '').trim();
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
+      setLocalError('Please enter a valid email address (e.g. patron@raalahami.lk).');
+      return;
+    }
+
+    if (!password || password.trim().length === 0) {
+      setLocalError('Please enter your account password.');
+      return;
+    }
+
     try {
-      const res = await login(email, password);
+      const res = await login(cleanEmail, password);
       if (res && res.success) {
         const userRole = (res.user?.role || '').toUpperCase();
 
         // Dynamic Role-Based Redirection: Kitchen staff routed to Admin Order Fulfillment
-        const userEmail = (res.user?.email || email || '').toLowerCase();
+        const userEmail = (res.user?.email || cleanEmail || '').toLowerCase();
         if (userRole === 'ADMIN' || userRole === 'MANAGER') {
           navigate('/admin', { replace: true });
         } else if (userRole === 'KITCHEN_STAFF' || userEmail.includes('kitchen')) {

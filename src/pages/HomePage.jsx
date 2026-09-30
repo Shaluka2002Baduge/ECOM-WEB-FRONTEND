@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Sparkles, UtensilsCrossed, Compass, ShieldCheck, HeartHandshake, Flame, Clock } from 'lucide-react';
 import Button from '../components/common/Button';
@@ -7,20 +7,274 @@ import MenuCard from '../components/menu/MenuCard';
 import { useCart } from '../context/CartContext';
 import { formatPrice } from '../utils/currency';
 
-/**
- * Raalahami Royal Heritage HomePage
- * Cohesive Sri Lankan Royal Heritage Design System
- * Features:
- * - Animated luxury food video/GIF background in hero section with dark obsidian gradient overlay
- * - Clean original floating Ceylon signature dish with radial glow on right
- * - 3 horizontal promo tiles (Royal Heritage Recipes, Lagoon & Catch, Ayurvedic Herbal Infusions)
- * - Signature Royal Curations showcase with dynamic live API pricing
- * - The Raalahami Legacy & EDI Accessibility commitment
- */
+const NOBLE_CURATIONS = [
+  {
+    id: 'recipes',
+    icon: '🏺',
+    title: 'Royal Heritage Recipes',
+    description: 'Slow-simmered in clay pots with Ceylon cinnamon bark, green cardamom, roasted coriander, and rich virgin coconut milk.',
+    videoSrc: '/videos/tile-recipes.mp4',
+    videoFallback: 'https://videos.pexels.com/video-files/5970015/5970015-uhd_4096_2160_25fps.mp4'
+  },
+  {
+    id: 'lagoon',
+    icon: '🦀',
+    title: 'Lagoon & Spice Catch',
+    description: 'Daily wild-caught Jaffna blue swimming crab, jumbo lagoon prawns, and yellowfin tuna tossed with toasted chili powder and murunga leaves.',
+    videoSrc: '/videos/tile-seafood.mp4',
+    videoFallback: 'https://videos.pexels.com/video-files/32797269/13981221_1080_1920_30fps.mp4'
+  },
+  {
+    id: 'herbal',
+    icon: '🥥',
+    title: 'Ayurvedic Herbal Infusions',
+    description: 'Spiced King Coconut (Thambili), chilled Ranawara herbal nectar, and Lemongrass-Cardamom elixirs brewed fresh each sunrise.',
+    videoSrc: '/videos/tile-herbal.mp4',
+    videoFallback: 'https://videos.pexels.com/video-files/34381881/14565478_2160_3840_30fps.mp4'
+  },
+  {
+    id: 'claypot',
+    icon: '🍲',
+    title: 'TRADITIONAL CLAYPOT RICE & CURRY',
+    description: 'Fragrant village red rice served with woodfire-simmered dhal, fiery coconut pol sambol, tempered heirloom vegetable curries, and crispy papadam in earthen clay pots.',
+    videoSrc: '/videos/habarana-curry.mp4',
+    videoFallback: 'https://ak.picdn.net/shutterstock/videos/4154466209/preview/stock-footage-habarana-north-central-province-sri-lanka.mp4'
+  },
+  {
+    id: 'watalappan',
+    icon: '🍮',
+    title: 'ROYAL WATALAPPAN & CONFECTIONS',
+    description: 'Authentic slow-steamed spiced coconut custard infused with pure Kitul jaggery, thick coconut cream, roasted cashews, and crushed green cardamom.',
+    videoSrc: '/videos/gemini_generated_video_d8fad616.mp4',
+    videoFallback: '/videos/tile-watalappan.mp4'
+  }
+];
+
+// Triplicated for a true continuous seamless infinite wrap without boundaries
+const INFINITE_CURATIONS = [
+  ...NOBLE_CURATIONS,
+  ...NOBLE_CURATIONS,
+  ...NOBLE_CURATIONS
+];
+
+// Memoized individual carousel card component with GPU hardware-accelerated transitions
+const NobleCurationCard = React.memo(
+  React.forwardRef(({ item, index, onClick }, ref) => {
+    return (
+      <div
+        ref={ref}
+        onClick={onClick}
+        className="group flex-none w-[360px] sm:w-[420px] md:w-[460px] h-[280px] relative rounded-2xl overflow-hidden bg-neutral-950/85 p-7 flex flex-col justify-between select-none will-change-transform transform-gpu backface-hidden scale-90 md:scale-95 z-10 opacity-65 border border-amber-500/20 shadow-md transition-all duration-300 hover:opacity-85 [&.is-active]:scale-105 [&.is-active]:md:scale-110 [&.is-active]:z-20 [&.is-active]:opacity-100 [&.is-active]:border-amber-400/90 cursor-pointer"
+      >
+        {/* Pre-rendered GPU Hardware-Accelerated Golden Glow Overlay (Zero Dynamic Repaints) */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 rounded-2xl border-2 border-amber-400/80 shadow-[0_0_25px_rgba(251,191,36,0.35)] pointer-events-none transition-opacity duration-300 opacity-0 group-[.is-active]:opacity-100 z-10"
+        />
+
+        {/* Background Looping Video with Lightweight Metadata Preload */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            zIndex: 0,
+            pointerEvents: 'none',
+            backgroundColor: '#070B14'
+          }}
+        >
+          <video
+            key={`${item.id}-${item.videoSrc}`}
+            src={item.videoSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="metadata"
+            className="w-full h-full object-cover opacity-40 filter brightness-95 contrast-110 saturate-120 transition-transform duration-700 group-[.is-active]:scale-105"
+          >
+            <source src={item.videoSrc} type="video/mp4" />
+            {item.videoFallback && <source src={item.videoFallback} type="video/mp4" />}
+          </video>
+        </div>
+
+        {/* Bottom Dark Scrim for Crisp Readability */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent z-[1] pointer-events-none"
+        />
+
+        {/* Icon Badge */}
+        <div
+          className="p-3 w-fit rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-900/10 border border-amber-500/30 text-amber-300 shadow-inner transition-transform duration-300 flex items-center justify-center text-2xl relative z-[2] group-[.is-active]:border-amber-400 group-[.is-active]:scale-110"
+        >
+          {item.icon}
+        </div>
+
+        {/* Typography Content */}
+        <div className="relative z-[2] mt-auto">
+          <h3
+            className="text-xl font-serif font-bold drop-shadow-md tracking-wide mb-1.5 transition-colors duration-300 text-amber-200 group-[.is-active]:text-amber-300"
+          >
+            {item.title}
+          </h3>
+          <p className="text-neutral-200 text-sm leading-relaxed font-sans drop-shadow-sm font-normal m-0">
+            {item.description}
+          </p>
+        </div>
+      </div>
+    );
+  })
+);
+NobleCurationCard.displayName = 'NobleCurationCard';
+
 export const HomePage = () => {
   const { addItem } = useCart();
   const [menuItems, setMenuItems] = useState([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const activeCardIndexRef = useRef(7);
+  const collectionScrollRef = useRef(null);
+  const cardElementsRef = useRef([]);
+
+  // Clickless Cursor-Guided Inertia Velocity & Animation Loop Refs
+  const targetVelocityRef = useRef(0);
+  const currentVelocityRef = useRef(0);
+  const animationFrameRef = useRef(null);
+  const lastSpotlightCheckRef = useRef(0);
+
+  // Seamless Infinite Virtual Wrap
+  const handleInfiniteWrap = useCallback(() => {
+    const container = collectionScrollRef.current;
+    if (!container) return;
+    const setWidth = container.scrollWidth / 3;
+    if (setWidth <= 0) return;
+
+    if (container.scrollLeft >= setWidth * 2) {
+      container.scrollLeft -= setWidth;
+    } else if (container.scrollLeft <= 0) {
+      container.scrollLeft += setWidth;
+    }
+  }, []);
+
+  // Center Spotlight Detection: Direct DOM classList manipulation with ZERO React re-renders
+  const updateCenterCard = useCallback(() => {
+    const container = collectionScrollRef.current;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const containerCenter = containerRect.left + containerRect.width / 2;
+
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    cardElementsRef.current.forEach((el, index) => {
+      if (!el) return;
+      const cardRect = el.getBoundingClientRect();
+      const cardCenter = cardRect.left + cardRect.width / 2;
+      const distance = Math.abs(containerCenter - cardCenter);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    if (activeCardIndexRef.current !== closestIndex) {
+      activeCardIndexRef.current = closestIndex;
+      cardElementsRef.current.forEach((el, index) => {
+        if (!el) return;
+        if (index === closestIndex) {
+          el.classList.add('is-active');
+        } else {
+          el.classList.remove('is-active');
+        }
+      });
+    }
+  }, []);
+
+  // Hover-to-Move: Cursor tracking relative to container center
+  const handleMouseMove = (e) => {
+    const container = collectionScrollRef.current;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0) return;
+
+    const normalizedX = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
+
+    // Deadzone: within +/- 15% of center, smooth halt
+    if (Math.abs(normalizedX) < 0.15) {
+      targetVelocityRef.current = 0;
+    } else {
+      const sign = Math.sign(normalizedX);
+      const intensity = (Math.abs(normalizedX) - 0.15) / 0.85;
+      const MAX_SPEED = 14;
+      targetVelocityRef.current = sign * Math.pow(intensity, 1.3) * MAX_SPEED;
+    }
+  };
+
+  const handleMouseLeave = () => {
+    targetVelocityRef.current = 0;
+  };
+
+  const handleWheel = (e) => {
+    const container = collectionScrollRef.current;
+    if (!container) return;
+    if (e.deltaY !== 0) {
+      container.scrollLeft += e.deltaY;
+      handleInfiniteWrap();
+      updateCenterCard();
+    }
+  };
+
+  // Persistent 60FPS RAF Drift Loop with Smooth Damping (Friction)
+  useEffect(() => {
+    let isRunning = true;
+
+    const animate = () => {
+      if (!isRunning) return;
+
+      // Smooth damping interpolation towards target velocity
+      currentVelocityRef.current += (targetVelocityRef.current - currentVelocityRef.current) * 0.08;
+
+      const container = collectionScrollRef.current;
+      if (container && Math.abs(currentVelocityRef.current) > 0.04) {
+        container.scrollLeft += currentVelocityRef.current;
+        handleInfiniteWrap();
+
+        const now = performance.now();
+        if (now - lastSpotlightCheckRef.current > 50) {
+          lastSpotlightCheckRef.current = now;
+          updateCenterCard();
+        }
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    animationFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      isRunning = false;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [handleInfiniteWrap, updateCenterCard]);
+
+  // Initialize carousel position to the middle set on initial load
+  useEffect(() => {
+    const container = collectionScrollRef.current;
+    if (container) {
+      const setWidth = container.scrollWidth / 3;
+      container.scrollLeft = setWidth;
+      const timer = setTimeout(() => {
+        updateCenterCard();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [updateCenterCard]);
 
   useEffect(() => {
     let isMounted = true;
@@ -97,6 +351,7 @@ export const HomePage = () => {
             loop
             muted
             playsInline
+            preload="metadata"
             style={{
               width: '100%',
               height: '100%',
@@ -109,10 +364,10 @@ export const HomePage = () => {
             <source src="https://videos.pexels.com/video-files/31631562/13476222_3840_2160_25fps.mp4" type="video/mp4" />
           </video>
           <div
+            className="hero-scrim-overlay"
             style={{
               position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.14) 0%, transparent 60%), radial-gradient(ellipse at 15% 85%, rgba(229, 169, 60, 0.08) 0%, transparent 50%), linear-gradient(180deg, rgba(11, 15, 25, 0.45) 0%, rgba(11, 15, 25, 0.62) 65%, #0B0F19 100%)'
+              inset: 0
             }}
           />
         </div>
@@ -225,468 +480,188 @@ export const HomePage = () => {
               </div>
             </div>
 
-            {/* Right Column: Floating Ceylon Signature Dish with Radial Glow */}
-            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-              {/* Radial Amber Glow */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '360px',
-                  height: '360px',
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(212, 175, 55, 0.28) 0%, rgba(229, 169, 60, 0.12) 50%, transparent 75%)',
-                  filter: 'blur(35px)',
-                  pointerEvents: 'none',
-                  zIndex: 1
-                }}
-              />
-
-              {/* Floating Featured Dish Card */}
-              <div
-                className="glass-panel"
-                style={{
-                  position: 'relative',
-                  zIndex: 2,
-                  width: '100%',
-                  maxWidth: '430px',
-                  borderRadius: 'var(--radius-xl)',
-                  overflow: 'hidden',
-                  border: '1px solid rgba(212, 175, 55, 0.35)',
-                  boxShadow: '0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.2)'
-                }}
-              >
-                {/* Crown Jewel Badge */}
+              {/* Right Column: Floating Ceylon Signature Dish with Radial Glow */}
+              <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                {/* Radial Amber Glow */}
                 <div
+                  aria-hidden="true"
                   style={{
                     position: 'absolute',
-                    top: '1rem',
-                    left: '1rem',
-                    zIndex: 3,
-                    background: 'rgba(11, 15, 25, 0.88)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(212, 175, 55, 0.45)',
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.35rem 0.85rem',
-                    fontSize: '0.75rem',
-                    fontWeight: '700',
-                    color: 'var(--accent-gold)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    letterSpacing: '0.05em'
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: '360px',
+                    height: '360px',
+                    borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(212, 175, 55, 0.28) 0%, rgba(229, 169, 60, 0.12) 50%, transparent 75%)',
+                    filter: 'blur(35px)',
+                    pointerEvents: 'none',
+                    zIndex: 1
                   }}
+                />
+
+                {/* Floating Featured Dish Card */}
+                <div
+                  className="relative z-10 w-full max-w-[430px] rounded-2xl border border-amber-500/30 bg-neutral-950/80 backdrop-blur-xl shadow-2xl shadow-black/80 hover:border-amber-400/60 hover:shadow-amber-500/10 transition-all duration-500 overflow-hidden group"
                 >
-                  <Sparkles size={12} /> CROWN SIGNATURE DISH
-                </div>
-
-                {/* Dish Image */}
-                <div style={{ height: '240px', overflow: 'hidden', position: 'relative' }}>
-                  <img
-                    src={heroDish?.imageUrl || 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=800&q=80'}
-                    alt="Royal Dutch Burgher Lamprais"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover'
-                    }}
-                  />
+                  {/* Crown Jewel Badge */}
                   <div
-                    style={{
-                      position: 'absolute',
-                      bottom: '0.75rem',
-                      right: '0.75rem',
-                      background: 'rgba(11, 15, 25, 0.85)',
-                      backdropFilter: 'blur(6px)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '0.25rem 0.65rem',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.3rem'
-                    }}
+                    className="absolute top-4 left-4 z-20 bg-neutral-950/90 backdrop-blur-md border border-amber-500/40 rounded-full px-3.5 py-1 text-xs font-bold text-amber-300 flex items-center gap-1.5 tracking-wider shadow-md"
                   >
-                    <Clock size={12} style={{ color: 'var(--accent-amber)' }} />
-                    45 mins slow bake
+                    <Sparkles size={12} /> CROWN SIGNATURE DISH
                   </div>
-                </div>
 
-                {/* Card Content */}
-                <div style={{ padding: '1.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <div>
-                      <h2
-                        style={{
-                          fontSize: '1.35rem',
-                          fontFamily: 'var(--font-serif)',
-                          color: 'var(--text-primary)',
-                          margin: 0,
-                          marginBottom: '0.25rem'
-                        }}
-                      >
-                        {heroDish?.name || 'Royal Dutch Burgher Lamprais'}
-                      </h2>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent-danger)' }}>
-                          <Flame size={13} />
-                          <Flame size={13} />
-                          <span style={{ marginLeft: '0.2rem', color: 'var(--text-muted)' }}>Medium Spiced</span>
-                        </span>
-                        <span>•</span>
-                        <span style={{ color: 'var(--accent-emerald)' }}>Banana Leaf Steamed</span>
-                      </div>
-                    </div>
-                    <span
+                  {/* Dish Image */}
+                  <div style={{ height: '240px', overflow: 'hidden', position: 'relative' }}>
+                    <img
+                      src={heroDish?.imageUrl || 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?auto=format&fit=crop&w=800&q=80'}
+                      alt="Royal Dutch Burgher Lamprais"
+                      loading="lazy"
                       style={{
-                        fontSize: '1.35rem',
-                        fontWeight: '800',
-                        color: 'var(--accent-gold)',
-                        whiteSpace: 'nowrap'
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        bottom: '0.75rem',
+                        right: '0.75rem',
+                        background: 'rgba(11, 15, 25, 0.85)',
+                        backdropFilter: 'blur(6px)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '0.25rem 0.65rem',
+                        fontSize: '0.75rem',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem'
                       }}
                     >
-                      {formatPrice(heroDish?.price || 1850)}
-                    </span>
+                      <Clock size={12} style={{ color: 'var(--accent-amber)' }} />
+                      45 mins slow bake
+                    </div>
                   </div>
 
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-                    Fragrant samba rice simmered in rich stock, mixed-meat curry, frikkadels, blachan, and seeni sambol, slow-baked within a scorched banana leaf parcel.
-                  </p>
+                  {/* Card Content */}
+                  <div style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <div>
+                        <h2
+                          style={{
+                            fontSize: '1.35rem',
+                            fontFamily: 'var(--font-serif)',
+                            color: 'var(--text-primary)',
+                            margin: 0,
+                            marginBottom: '0.25rem'
+                          }}
+                        >
+                          {heroDish?.name || 'Royal Dutch Burgher Lamprais'}
+                        </h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent-danger)' }}>
+                            <Flame size={13} />
+                            <Flame size={13} />
+                            <span style={{ marginLeft: '0.2rem', color: 'var(--text-muted)' }}>Medium Spiced</span>
+                          </span>
+                          <span>•</span>
+                          <span style={{ color: 'var(--accent-emerald)' }}>Banana Leaf Steamed</span>
+                        </div>
+                      </div>
+                      <span
+                        className="bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-300 font-bold px-3 py-1 rounded-full border border-amber-500/40 text-xs tracking-wider whitespace-nowrap"
+                      >
+                        {formatPrice(heroDish?.price || 1850)}
+                      </span>
+                    </div>
 
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <Button
-                      variant="primary"
-                      size="md"
-                      onClick={() => heroDish && addItem(heroDish, 1)}
-                      style={{ flex: 1 }}
-                      ariaLabel="Order Royal Dutch Burgher Lamprais"
-                    >
-                      + Order Signature Dish
-                    </Button>
-                    <Link to="/menu" style={{ textDecoration: 'none' }}>
-                      <Button variant="outline" size="md">
-                        View Details
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+                      Fragrant samba rice simmered in rich stock, mixed-meat curry, frikkadels, blachan, and seeni sambol, slow-baked within a scorched banana leaf parcel.
+                    </p>
+
+                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => heroDish && addItem(heroDish, 1)}
+                        className="flex-1"
+                        ariaLabel="Order Royal Dutch Burgher Lamprais"
+                      >
+                        Order Signature Dish
                       </Button>
-                    </Link>
+                      <Link to="/menu" style={{ textDecoration: 'none' }}>
+                        <Button variant="outline" size="md">
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* 2. THREE HORIZONTAL PROMO TILES WITH LIVE BACKGROUND VIDEOS */}
+      {/* 2. FIVE NOBLE ROYAL CURATIONS INFINITE STREAMING SLIDER WITH CENTER SPOTLIGHT */}
       <section
-        style={{
-          padding: '3.5rem 0',
-          backgroundColor: '#070B14',
-          borderBottom: '1px solid var(--border-subtle)'
-        }}
-        aria-label="Culinary highlights"
+        className="w-full bg-[#070B14] border-b border-[#242D42] relative z-10 py-10 overflow-hidden"
+        aria-label="Noble royal culinary highlights"
       >
-        <div className="container">
+        {/* Section Header */}
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4">
           <div
+            className="badge badge-gold"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '1.75rem'
+              marginBottom: '0.6rem',
+              padding: '0.35rem 0.85rem',
+              fontSize: '0.75rem',
+              letterSpacing: '0.08em',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
             }}
           >
-            {/* Promo Tile 1: Royal Heritage Recipes (Browsing Recipe Book Video 5970015) */}
-            <div
-              className="glass-panel"
-              style={{
-                position: 'relative',
-                padding: '2rem',
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                borderLeft: '4px solid var(--accent-gold)',
-                borderTop: '1px solid rgba(212, 175, 55, 0.3)',
-                borderRight: '1px solid var(--border-subtle)',
-                borderBottom: '1px solid var(--border-subtle)',
-                minHeight: '230px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
-              }}
-            >
-              {/* Background Video */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  overflow: 'hidden',
-                  zIndex: 0,
-                  pointerEvents: 'none'
+            <Sparkles size={13} style={{ color: 'var(--accent-gold)' }} />
+            ROYAL CURATIONS
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-amber-100 tracking-wide m-0">
+            The Noble Gastronomy Collection
+          </h2>
+        </div>
+
+        {/* Infinite Carousel Track with Dynamic Center Spotlight & Mouse Drag-to-Scroll */}
+        <div className="w-full overflow-hidden">
+          <div
+            ref={collectionScrollRef}
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onWheel={handleWheel}
+            className="flex gap-6 overflow-x-auto py-8 px-4 sm:px-8 select-none no-scrollbar items-center cursor-default will-change-transform transform-gpu"
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'auto'
+            }}
+          >
+            {INFINITE_CURATIONS.map((item, index) => (
+              <NobleCurationCard
+                key={`${item.id}-${index}`}
+                ref={(el) => (cardElementsRef.current[index] = el)}
+                item={item}
+                index={index}
+                onClick={() => {
+                  const el = cardElementsRef.current[index];
+                  if (el) {
+                    targetVelocityRef.current = 0;
+                    currentVelocityRef.current = 0;
+                    el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                    setTimeout(updateCenterCard, 350);
+                  }
                 }}
-              >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: 0.58,
-                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
-                  }}
-                >
-                  <source src="/videos/tile-recipes.mp4" type="video/mp4" />
-                  <source src="https://videos.pexels.com/video-files/5970015/5970015-uhd_4096_2160_25fps.mp4" type="video/mp4" />
-                </video>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(ellipse at 80% 20%, rgba(212, 175, 55, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
-                  }}
-                />
-              </div>
-
-              {/* Content on top */}
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <div
-                  style={{
-                    width: '3.2rem',
-                    height: '3.2rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
-                    backdropFilter: 'blur(6px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.6rem',
-                    marginBottom: '1rem',
-                    border: '1px solid rgba(212, 175, 55, 0.4)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
-                  }}
-                >
-                  🏺
-                </div>
-                <h3
-                  style={{
-                    fontSize: '1.25rem',
-                    marginBottom: '0.5rem',
-                    color: '#F8FAFC',
-                    fontFamily: 'var(--font-serif)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
-                  }}
-                >
-                  Royal Heritage Recipes
-                </h3>
-                <p
-                  style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.6,
-                    margin: 0,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
-                  }}
-                >
-                  Slow-simmered in clay pots with Ceylon cinnamon bark, green cardamom, roasted coriander, and rich virgin coconut milk.
-                </p>
-              </div>
-            </div>
-
-            {/* Promo Tile 2: Lagoon & Spice Catch (Seafood Paella & Fresh Catch Video 32797269) */}
-            <div
-              className="glass-panel"
-              style={{
-                position: 'relative',
-                padding: '2rem',
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                borderLeft: '4px solid var(--accent-amber)',
-                borderTop: '1px solid rgba(229, 169, 60, 0.3)',
-                borderRight: '1px solid var(--border-subtle)',
-                borderBottom: '1px solid var(--border-subtle)',
-                minHeight: '230px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
-              }}
-            >
-              {/* Background Video */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  overflow: 'hidden',
-                  zIndex: 0,
-                  pointerEvents: 'none'
-                }}
-              >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: 0.58,
-                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
-                  }}
-                >
-                  <source src="/videos/tile-seafood.mp4" type="video/mp4" />
-                  <source src="https://videos.pexels.com/video-files/32797269/13981221_1080_1920_30fps.mp4" type="video/mp4" />
-                </video>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(ellipse at 80% 20%, rgba(229, 169, 60, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
-                  }}
-                />
-              </div>
-
-              {/* Content on top */}
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <div
-                  style={{
-                    width: '3.2rem',
-                    height: '3.2rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
-                    backdropFilter: 'blur(6px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.6rem',
-                    marginBottom: '1rem',
-                    border: '1px solid rgba(229, 169, 60, 0.4)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
-                  }}
-                >
-                  🦀
-                </div>
-                <h3
-                  style={{
-                    fontSize: '1.25rem',
-                    marginBottom: '0.5rem',
-                    color: '#F8FAFC',
-                    fontFamily: 'var(--font-serif)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
-                  }}
-                >
-                  Lagoon & Spice Catch
-                </h3>
-                <p
-                  style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.6,
-                    margin: 0,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
-                  }}
-                >
-                  Daily wild-caught Jaffna blue swimming crab, jumbo lagoon prawns, and yellowfin tuna tossed with toasted chili powder and murunga leaves.
-                </p>
-              </div>
-            </div>
-
-            {/* Promo Tile 3: Ayurvedic Herbal Infusions (Refreshing Tamarind Lime Juice Video 34381881) */}
-            <div
-              className="glass-panel"
-              style={{
-                position: 'relative',
-                padding: '2rem',
-                borderRadius: 'var(--radius-lg)',
-                overflow: 'hidden',
-                borderLeft: '4px solid var(--accent-emerald)',
-                borderTop: '1px solid rgba(16, 185, 129, 0.3)',
-                borderRight: '1px solid var(--border-subtle)',
-                borderBottom: '1px solid var(--border-subtle)',
-                minHeight: '230px',
-                boxShadow: '0 12px 30px rgba(0,0,0,0.55)'
-              }}
-            >
-              {/* Background Video */}
-              <div
-                aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  overflow: 'hidden',
-                  zIndex: 0,
-                  pointerEvents: 'none'
-                }}
-              >
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    opacity: 0.58,
-                    filter: 'brightness(0.95) contrast(1.1) saturate(1.2)'
-                  }}
-                >
-                  <source src="/videos/tile-herbal.mp4" type="video/mp4" />
-                  <source src="https://videos.pexels.com/video-files/34381881/14565478_2160_3840_30fps.mp4" type="video/mp4" />
-                </video>
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.15) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.5) 0%, rgba(11, 15, 25, 0.78) 70%, #0B0F19 100%)'
-                  }}
-                />
-              </div>
-
-              {/* Content on top */}
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <div
-                  style={{
-                    width: '3.2rem',
-                    height: '3.2rem',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'rgba(11, 15, 25, 0.85)',
-                    backdropFilter: 'blur(6px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.6rem',
-                    marginBottom: '1rem',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
-                  }}
-                >
-                  🥥
-                </div>
-                <h3
-                  style={{
-                    fontSize: '1.25rem',
-                    marginBottom: '0.5rem',
-                    color: '#F8FAFC',
-                    fontFamily: 'var(--font-serif)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.9)'
-                  }}
-                >
-                  Ayurvedic Herbal Infusions
-                </h3>
-                <p
-                  style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.6,
-                    margin: 0,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.85)'
-                  }}
-                >
-                  Spiced King Coconut (Thambili), chilled Ranawara herbal nectar, and Lemongrass-Cardamom elixirs brewed fresh each sunrise.
-                </p>
-              </div>
-            </div>
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -718,6 +693,7 @@ export const HomePage = () => {
             loop
             muted
             playsInline
+            preload="metadata"
             style={{
               width: '100%',
               height: '100%',
@@ -730,10 +706,10 @@ export const HomePage = () => {
             <source src="https://videos.pexels.com/video-files/9574814/9574814-hd_1920_1080_25fps.mp4" type="video/mp4" />
           </video>
           <div
+            className="section-scrim-overlay"
             style={{
               position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at 70% 30%, rgba(212, 175, 55, 0.14) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.55) 0%, rgba(11, 15, 25, 0.72) 60%, #0B0F19 100%)'
+              inset: 0
             }}
           />
         </div>
@@ -822,6 +798,7 @@ export const HomePage = () => {
             loop
             muted
             playsInline
+            preload="metadata"
             style={{
               width: '100%',
               height: '100%',
@@ -834,10 +811,10 @@ export const HomePage = () => {
             <source src="https://videos.pexels.com/video-files/9797433/9797433-hd_1920_1080_25fps.mp4" type="video/mp4" />
           </video>
           <div
+            className="section-scrim-overlay"
             style={{
               position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at 30% 70%, rgba(229, 169, 60, 0.08) 0%, transparent 60%), linear-gradient(180deg, rgba(11, 15, 25, 0.28) 0%, rgba(11, 15, 25, 0.45) 65%, rgba(11, 15, 25, 0.85) 100%)'
+              inset: 0
             }}
           />
         </div>

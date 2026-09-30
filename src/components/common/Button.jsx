@@ -1,7 +1,7 @@
 import React from 'react';
 
 /**
- * Accessible, styled Button component
+ * Accessible, ultra-luxury styled Button component
  * Complies with WCAG 2.1 Contrast & State requirements
  */
 const Button = ({
@@ -14,88 +14,55 @@ const Button = ({
   onClick,
   className = '',
   ariaLabel,
+  style = {},
   ...props
 }) => {
-  const baseStyles = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    fontWeight: '600',
-    fontFamily: 'var(--font-sans)',
-    borderRadius: 'var(--radius-md)',
-    cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
-    transition: 'all var(--transition-fast)',
-    border: '1px solid transparent',
-    textDecoration: 'none',
-    opacity: disabled ? 0.6 : 1,
-    position: 'relative'
+  const sizeClasses = {
+    sm: 'px-4 py-2 text-xs',
+    md: 'px-6 py-3 text-sm',
+    lg: 'px-7 py-3.5 text-sm md:text-base'
   };
 
-  const sizeStyles = {
-    sm: { padding: '0.4rem 0.85rem', fontSize: '0.85rem' },
-    md: { padding: '0.65rem 1.35rem', fontSize: '0.95rem' },
-    lg: { padding: '0.85rem 1.85rem', fontSize: '1.1rem' }
+  const variantClasses = {
+    primary:
+      'relative inline-flex items-center justify-center gap-2 rounded-full font-serif font-semibold tracking-wider uppercase bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 bg-[length:200%_auto] hover:bg-right text-neutral-950 shadow-lg shadow-amber-500/25 hover:shadow-amber-400/40 hover:scale-[1.03] active:scale-95 transition-all duration-500 cursor-pointer overflow-hidden group',
+    outline:
+      'relative inline-flex items-center justify-center gap-2 rounded-full font-serif text-sm tracking-wide text-amber-700 dark:text-amber-200 bg-stone-100/90 dark:bg-neutral-950/60 hover:bg-amber-500/10 border border-amber-600/40 dark:border-amber-400/40 hover:border-amber-600 dark:hover:border-amber-400 backdrop-blur-md hover:text-amber-800 dark:hover:text-amber-100 hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer',
+    secondary:
+      'relative inline-flex items-center justify-center gap-2 rounded-full font-serif text-sm tracking-wide text-stone-800 dark:text-neutral-200 bg-stone-200/90 dark:bg-neutral-900/80 hover:bg-stone-300 dark:hover:bg-neutral-800 border border-stone-300 dark:border-neutral-700/60 hover:border-amber-600/40 dark:hover:border-amber-500/40 backdrop-blur-md hover:text-stone-950 dark:hover:text-white hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer shadow-md',
+    danger:
+      'relative inline-flex items-center justify-center gap-2 rounded-full font-serif font-semibold tracking-wider uppercase bg-gradient-to-r from-red-600 via-rose-500 to-red-600 text-white shadow-lg shadow-red-500/25 hover:shadow-red-500/40 hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer',
+    ghost:
+      'relative inline-flex items-center justify-center gap-2 rounded-full font-serif tracking-wide text-stone-600 dark:text-neutral-400 hover:text-amber-700 dark:hover:text-amber-300 hover:bg-amber-500/10 transition-all duration-200 cursor-pointer'
   };
 
-  const variantStyles = {
-    primary: {
-      backgroundColor: 'var(--accent-gold)',
-      color: '#0B0D11',
-      borderColor: 'var(--accent-gold)',
-      boxShadow: 'var(--shadow-sm)'
-    },
-    secondary: {
-      backgroundColor: 'var(--bg-surface-elevated)',
-      color: 'var(--text-primary)',
-      borderColor: 'var(--border-subtle)'
-    },
-    outline: {
-      backgroundColor: 'transparent',
-      color: 'var(--accent-gold)',
-      borderColor: 'var(--accent-gold)'
-    },
-    danger: {
-      backgroundColor: 'var(--accent-danger)',
-      color: '#FFFFFF',
-      borderColor: 'var(--accent-danger)'
-    },
-    ghost: {
-      backgroundColor: 'transparent',
-      color: 'var(--text-secondary)',
-      borderColor: 'transparent'
-    }
-  };
-
-  const computedStyle = {
-    ...baseStyles,
-    ...(sizeStyles[size] || sizeStyles.md),
-    ...(variantStyles[variant] || variantStyles.primary)
-  };
+  const currentSizeClass = sizeClasses[size] || sizeClasses.md;
+  const currentVariantClass = variantClasses[variant] || variantClasses.primary;
+  const stateClass = (disabled || isLoading) ? 'opacity-60 cursor-not-allowed pointer-events-none' : '';
 
   return (
     <button
       type={type}
-      style={computedStyle}
       disabled={disabled || isLoading}
       aria-busy={isLoading ? 'true' : 'false'}
       aria-label={ariaLabel}
       onClick={onClick}
-      className={`ralahami-btn ${className}`}
+      className={`ralahami-btn ${currentVariantClass} ${currentSizeClass} ${stateClass} ${className}`}
+      style={style}
       {...props}
     >
+      {/* Subtle Shimmer Streak for Primary CTA */}
+      {variant === 'primary' && !disabled && (
+        <span
+          className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000 ease-in-out pointer-events-none"
+          aria-hidden="true"
+        />
+      )}
+
       {isLoading ? (
         <>
           <span
-            style={{
-              width: '1em',
-              height: '1em',
-              border: '2px solid currentColor',
-              borderRightColor: 'transparent',
-              borderRadius: '50%',
-              display: 'inline-block',
-              animation: 'spin 0.75s linear infinite'
-            }}
+            className="w-4 h-4 border-2 border-current border-r-transparent rounded-full inline-block animate-spin"
             aria-hidden="true"
           />
           <span>Processing...</span>
@@ -103,18 +70,6 @@ const Button = ({
       ) : (
         children
       )}
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        .ralahami-btn:hover:not(:disabled) {
-          filter: brightness(1.1);
-          transform: translateY(-1px);
-        }
-        .ralahami-btn:active:not(:disabled) {
-          transform: translateY(0);
-        }
-      `}</style>
     </button>
   );
 };

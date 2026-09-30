@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import Button from '../common/Button';
+import { isValidEmail, isValidTextLength, sanitizeInput } from '../../utils/validators';
 
 /**
  * Isolated Staff Member Modal Component
@@ -45,14 +46,14 @@ export const StaffModal = ({
 
   const validateForm = () => {
     const errors = {};
-    if (!formData.name || formData.name.trim().length < 3) {
-      errors.name = 'Staff name must be at least 3 characters.';
+    if (!isValidTextLength(formData.name, 3, 80)) {
+      errors.name = 'Staff name must be between 3 and 80 characters.';
     }
-    if (!formData.email || !/^\S+@\S+\.\S+$/.test(formData.email.trim())) {
+    if (!isValidEmail(formData.email)) {
       errors.email = 'Please provide a valid staff email address.';
     }
-    if (!formData.department || formData.department.trim().length < 2) {
-      errors.department = 'Please specify assigned department or station.';
+    if (!isValidTextLength(formData.department, 2, 80)) {
+      errors.department = 'Please specify assigned department or station (2-80 characters).';
     }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -76,9 +77,9 @@ export const StaffModal = ({
     setIsSaving(true);
     const payload = {
       ...formData,
-      name: formData.name.trim(),
-      email: formData.email.trim(),
-      department: formData.department.trim()
+      name: sanitizeInput(formData.name),
+      email: sanitizeInput(formData.email),
+      department: sanitizeInput(formData.department)
     };
 
     try {

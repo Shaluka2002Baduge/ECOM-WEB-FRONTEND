@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import CategoryTabs from '../components/menu/CategoryTabs';
 import MenuCard from '../components/menu/MenuCard';
 import Input from '../components/common/Input';
+import RoyalPagination from '../components/common/RoyalPagination';
 import menuService from '../services/menuService';
+
+const ITEMS_PER_PAGE = 6;
 
 /**
  * Accessible MenuPage
- * Filterable categories, accessible live search, and dietary criteria
+ * Filterable categories, accessible live search, dietary criteria, and RoyalPagination
  */
 export const MenuPage = () => {
   const [items, setItems] = useState([]);
@@ -14,6 +17,7 @@ export const MenuPage = () => {
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDietary, setSelectedDietary] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -35,35 +39,83 @@ export const MenuPage = () => {
     loadData();
   }, []);
 
+  // Reset page to 1 whenever filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeCategory, searchQuery, selectedDietary]);
+
   // Filter items locally for responsive experience
-  const filteredItems = items.filter((item) => {
-    const matchesCategory =
-      activeCategory === 'All' || item.category.toLowerCase() === activeCategory.toLowerCase();
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const matchesCategory =
+        activeCategory === 'All' || item.category.toLowerCase() === activeCategory.toLowerCase();
 
-    const matchesSearch =
-      searchQuery === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        searchQuery === '' ||
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDietary =
-      selectedDietary === 'All' ||
-      (item.dietary && item.dietary.some((d) => d.toLowerCase() === selectedDietary.toLowerCase()));
+      const matchesDietary =
+        selectedDietary === 'All' ||
+        (item.dietary && item.dietary.some((d) => d.toLowerCase() === selectedDietary.toLowerCase()));
 
-    return matchesCategory && matchesSearch && matchesDietary;
-  });
+      return matchesCategory && matchesSearch && matchesDietary;
+    });
+  }, [items, activeCategory, searchQuery, selectedDietary]);
+
+  // Paginate filtered items
+  const totalPages = Math.ceil(filteredItems.length / ITEMS_PER_PAGE);
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredItems, currentPage]);
 
   return (
-    <div className="menu-page fade-in" style={{ padding: '3rem 0 5rem 0' }}>
-      <div className="container">
+    <div className="menu-page fade-in relative min-h-screen" style={{ padding: '3.5rem 0 5.5rem 0' }}>
+      {/* Royal Atmospheric Feast Background Image (Ultra-Vivid Visibility) */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+        style={{
+          backgroundImage: 'url(/images/royal-menu-bg.jpg)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          opacity: 0.92,
+          filter: 'saturate(1.2) brightness(1.02) contrast(1.05)'
+        }}
+        aria-hidden="true"
+      />
+      {/* Light Translucent Veil to Keep Image Crystal Clear & Food Vibrant */}
+      <div
+        className="fixed inset-0 pointer-events-none z-0 menu-veil-overlay"
+        aria-hidden="true"
+      />
+
+      <div className="container relative z-10">
         {/* Page Header */}
         <div style={{ marginBottom: '2.5rem' }}>
           <span className="badge badge-gold" style={{ marginBottom: '0.5rem' }}>
             ✦ Royal Culinary Offerings
           </span>
-          <h1 style={{ marginBottom: '0.75rem', fontSize: 'clamp(2rem, 4vw, 2.75rem)' }}>
-            <span className="text-gradient-gold">Royal A La Carte Menu</span>
+          <h1
+            style={{
+              marginBottom: '0.75rem',
+              fontSize: 'clamp(2.2rem, 4.5vw, 3rem)',
+              textShadow: '0 4px 20px rgba(0, 0, 0, 0.8)'
+            }}
+          >
+            <span className="text-gradient-gold">Royal Menu</span>
           </h1>
-          <p style={{ color: 'var(--text-secondary)', maxWidth: '680px', margin: 0, fontSize: '1.05rem', lineHeight: '1.6' }}>
+          <p
+            style={{
+              color: '#F4EDE4',
+              maxWidth: '680px',
+              margin: 0,
+              fontSize: '1.05rem',
+              lineHeight: '1.6',
+              textShadow: '0 2px 10px rgba(0, 0, 0, 0.85)'
+            }}
+          >
             Indulge in time-honored recipes simmered in stone claypots and seasoned with authentic Ceylon spices at Raalahami.
           </p>
         </div>
@@ -189,17 +241,30 @@ export const MenuPage = () => {
             </button>
           </div>
         ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '2rem'
-            }}
-          >
-            {filteredItems.map((item) => (
-              <MenuCard key={item.id} item={item} />
-            ))}
-          </div>
+          <>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: '2rem'
+              }}
+            >
+              {paginatedItems.map((item) => (
+                <MenuCard key={item.id} item={item} />
+              ))}
+            </div>
+
+            <RoyalPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => {
+                setCurrentPage(page);
+                window.scrollTo({ top: 200, behavior: 'smooth' });
+              }}
+              itemsPerPage={ITEMS_PER_PAGE}
+              totalItems={filteredItems.length}
+            />
+          </>
         )}
       </div>
     </div>

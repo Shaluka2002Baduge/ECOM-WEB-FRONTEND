@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
+import { isValidEmail, isValidPhone, isValidTextLength, isValidPassword, sanitizeInput } from '../utils/validators';
 
 /**
  * Accessible RegisterPage
@@ -32,6 +33,30 @@ export const RegisterPage = () => {
     e.preventDefault();
     setLocalError(null);
 
+    const cleanName = sanitizeInput(formData.name || '');
+    const cleanEmail = (formData.email || '').trim();
+    const cleanPhone = (formData.phone || '').trim();
+
+    if (!cleanName || !isValidTextLength(cleanName, 2, 80)) {
+      setLocalError('Please enter a valid full name (at least 2 characters).');
+      return;
+    }
+
+    if (!cleanEmail || !isValidEmail(cleanEmail)) {
+      setLocalError('Please enter a valid email address.');
+      return;
+    }
+
+    if (cleanPhone && !isValidPhone(cleanPhone)) {
+      setLocalError('Please enter a valid Sri Lankan or International phone number (e.g. 0771234567).');
+      return;
+    }
+
+    if (!formData.password || !isValidPassword(formData.password, 6)) {
+      setLocalError('Password must contain at least 6 characters.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setLocalError('Passwords do not match. Please verify.');
       return;
@@ -39,9 +64,10 @@ export const RegisterPage = () => {
 
     try {
       const payload = {
-        displayName: formData.fullName || formData.name || formData.displayName,
-        email: formData.email,
-        password: formData.password
+        displayName: cleanName,
+        email: cleanEmail,
+        password: formData.password,
+        ...(cleanPhone ? { phone: cleanPhone } : {})
       };
 
       const res = await register(payload);
@@ -51,7 +77,7 @@ export const RegisterPage = () => {
           state: {
             successMessage:
               'Account created successfully! Please sign in with your credentials to continue.',
-            prefillEmail: formData.email
+            prefillEmail: cleanEmail
           },
           replace: true
         });
