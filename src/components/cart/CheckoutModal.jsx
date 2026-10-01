@@ -70,7 +70,7 @@ export const CheckoutModal = ({ isOpen, onClose }) => {
       return 'Email address is mandatory for dispatching your culinary receipt.';
     }
     if (!emailRegex.test(val.trim())) {
-      return 'Please enter a valid royal patron email (e.g. patron@raalahami.lk).';
+      return 'Please enter a valid royal user email (e.g. user@raalahami.lk).';
     }
     return null;
   };
@@ -280,10 +280,10 @@ export const CheckoutModal = ({ isOpen, onClose }) => {
                 id="modal-email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="patron@raalahami.lk"
+                placeholder="user@raalahami.lk"
                 required
                 error={emailError}
-                helperText={isAuthenticated ? "Verified patron profile" : "Mandatory for receipts"}
+                helperText={isAuthenticated ? "Verified user profile" : "Mandatory for receipts"}
               />
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -8,7 +9,7 @@ import { isValidEmail, isValidPhone, isValidTextLength, isValidPassword, sanitiz
 
 /**
  * Accessible RegisterPage
- * Creates patron identity profile with dietary notes
+ * Creates user identity profile with dietary notes
  */
 export const RegisterPage = () => {
   const { register, isLoading, error } = useAuth();
@@ -22,6 +23,8 @@ export const RegisterPage = () => {
     confirmPassword: ''
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [localError, setLocalError] = useState(null);
 
   const handleChange = (e) => {
@@ -95,7 +98,7 @@ export const RegisterPage = () => {
             <span className="text-gradient-gold">Join the Royal Court</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
-            Register your patron profile for effortless table reservations and dining privileges at Raalahami.
+            Register your user profile for effortless table reservations and dining privileges at Raalahami.
           </p>
         </div>
 
@@ -108,7 +111,7 @@ export const RegisterPage = () => {
           />
         )}
 
-        <form onSubmit={handleSubmit} aria-label="Patron registration form">
+        <form onSubmit={handleSubmit} aria-label="User registration form">
           <Input
             label="Full Name"
             name="name"
@@ -125,7 +128,7 @@ export const RegisterPage = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="patron@example.com"
+            placeholder="user@example.com"
             required
             autoComplete="email"
           />
@@ -144,24 +147,80 @@ export const RegisterPage = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
               required
               autoComplete="new-password"
+              rightElement={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.3rem',
+                    cursor: 'pointer',
+                    color: showPassword ? 'var(--accent-gold)' : 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 'var(--radius-sm)',
+                    transition: 'color var(--transition-fast)'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = showPassword
+                      ? 'var(--accent-gold)'
+                      : 'var(--text-muted)')
+                  }
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
             />
 
             <Input
               label="Confirm Password"
-              type="password"
+              type={showConfirmPassword ? 'text' : 'password'}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="••••••••"
               required
               autoComplete="new-password"
+              rightElement={
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  title={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: '0.3rem',
+                    cursor: 'pointer',
+                    color: showConfirmPassword ? 'var(--accent-gold)' : 'var(--text-muted)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 'var(--radius-sm)',
+                    transition: 'color var(--transition-fast)'
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = showConfirmPassword
+                      ? 'var(--accent-gold)'
+                      : 'var(--text-muted)')
+                  }
+                >
+                  {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              }
             />
           </div>
 
@@ -172,11 +231,11 @@ export const RegisterPage = () => {
             isLoading={isLoading}
             style={{ width: '100%', marginTop: '0.5rem', marginBottom: '1.5rem' }}
           >
-            Create Patron Profile
+            Create User Profile
           </Button>
 
           <div style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-            Already an esteemed patron?{' '}
+            Already a registered user?{' '}
             <Link to="/login" style={{ color: 'var(--accent-gold)', fontWeight: '600' }}>
               Sign In
             </Link>

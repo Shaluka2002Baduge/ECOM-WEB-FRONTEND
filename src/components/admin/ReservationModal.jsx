@@ -133,8 +133,8 @@ export const ReservationModal = ({
       guest: cleanGuest,
       customerName: cleanGuest,
       phone: cleanPhone,
-      email: cleanEmail || 'patron@raalahami.lk',
-      customerEmail: cleanEmail || 'patron@raalahami.lk',
+      email: cleanEmail || 'user@raalahami.lk',
+      customerEmail: cleanEmail || 'user@raalahami.lk',
       date: formData.date,
       diningDate: formData.date,
       dining_date: formData.date,
@@ -152,7 +152,7 @@ export const ReservationModal = ({
       assignedTable: formData.table,
       table_number: formData.table,
       tableNumber: formData.table,
-      notes: cleanNotes || 'Walk-In Patron Booking',
+      notes: cleanNotes || 'Walk-In User Booking',
       status: reservation?.status || 'CONFIRMED'
     };
 
@@ -291,7 +291,7 @@ export const ReservationModal = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="patron@raalahami.lk"
+                placeholder="user@raalahami.lk"
                 style={{
                   width: '100%',
                   padding: '0.65rem 0.85rem',

@@ -190,7 +190,7 @@ export const StaffModal = ({
               <option value="KITCHEN_STAFF">KITCHEN_STAFF (Kitchen Display & Prep Orders)</option>
               <option value="ADMIN">ADMIN (Full Operational & Financial Suite)</option>
               <option value="MANAGER">MANAGER (Dining & Floor Supervision)</option>
-              <option value="CUSTOMER">CUSTOMER (Patron Access)</option>
+              <option value="CUSTOMER">CUSTOMER (User Access)</option>
             </select>
           </div>
 

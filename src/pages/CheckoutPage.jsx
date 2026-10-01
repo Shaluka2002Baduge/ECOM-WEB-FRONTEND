@@ -54,7 +54,7 @@ export const CheckoutPage = () => {
   // 1. RECIPIENT NAME & CONTACT BINDINGS
   const [recipientName, setRecipientName] = useState(() => user?.name || '');
   const [contactPhone, setContactPhone] = useState('');
-  const [patronEmail, setPatronEmail] = useState(() => (user?.email || '').trim().toLowerCase());
+  const [userEmail, setUserEmail] = useState(() => (user?.email || '').trim().toLowerCase());
 
   // 2. ORDER TYPE SELECTION (DELIVERY / TAKEAWAY / DINE_IN)
   const [orderType, setOrderType] = useState('DELIVERY');
@@ -84,8 +84,8 @@ export const CheckoutPage = () => {
 
   // Auto pre-fill user credentials when authenticated (only if fields are currently empty)
   useEffect(() => {
-    if (user?.email && !patronEmail) {
-      setPatronEmail(user.email.trim().toLowerCase());
+    if (user?.email && !userEmail) {
+      setUserEmail(user.email.trim().toLowerCase());
     }
     if (user?.name && !recipientName) {
       setRecipientName(user.name);
@@ -255,7 +255,7 @@ export const CheckoutPage = () => {
       return 'Email address is required for dispatching your royal culinary receipt.';
     }
     if (!emailRegex.test(val.trim())) {
-      return 'Please enter a valid email address (e.g. patron@raalahami.lk).';
+      return 'Please enter a valid email address (e.g. user@raalahami.lk).';
     }
     return null;
   };
@@ -281,9 +281,9 @@ export const CheckoutPage = () => {
     setNameError(null);
 
     // 2. Validate Email
-    const finalEmail = (patronEmail || user?.email || '').trim().toLowerCase();
+    const finalEmail = (userEmail || user?.email || '').trim().toLowerCase();
     if (!finalEmail || !isValidEmail(finalEmail)) {
-      const emailErr = 'Please enter a valid email address (e.g. patron@raalahami.lk) for order receipts.';
+      const emailErr = 'Please enter a valid email address (e.g. user@raalahami.lk) for order receipts.';
       setEmailError(emailErr);
       setError(emailErr);
       return;
@@ -405,6 +405,7 @@ export const CheckoutPage = () => {
         orderType === 'DINE_IN'
           ? {
               ...reservationData,
+              user_name: finalRecipientName,
               patron_name: finalRecipientName,
               customer_name: finalRecipientName,
               name: finalRecipientName,
@@ -545,7 +546,7 @@ export const CheckoutPage = () => {
             <span className="text-gradient-gold">Royal Order Checkout</span>
           </h1>
           <p style={{ color: 'var(--text-muted)' }}>
-            Select fulfillment, verify patron coordinates, and authorize your royal feast.
+            Select fulfillment, verify user coordinates, and authorize your royal feast.
           </p>
         </div>
 
@@ -633,7 +634,7 @@ export const CheckoutPage = () => {
 
             {/* 1. RECIPIENT & CONTACT DETAILS */}
             <h2 style={{ fontSize: '1.3rem', color: 'var(--accent-gold)', marginBottom: '1.25rem' }}>
-              1. Patron & Contact Coordinates
+              1. User & Contact Coordinates
             </h2>
 
             <div style={{ marginBottom: '1rem' }}>
@@ -649,7 +650,7 @@ export const CheckoutPage = () => {
                 placeholder="e.g. Shaluka Dulanjana"
                 required
                 error={nameError}
-                helperText="Enter the name of the patron receiving or attending this royal feast"
+                helperText="Enter the name of the user receiving or attending this royal feast"
               />
             </div>
 
@@ -674,22 +675,22 @@ export const CheckoutPage = () => {
 
               <div>
                 <Input
-                  label="Patron Email Address"
+                  label="User Email Address"
                   type="email"
-                  name="patronEmail"
+                  name="userEmail"
                   id="checkout-email"
-                  value={patronEmail}
+                  value={userEmail}
                   onChange={(e) => {
                     const val = e.target.value;
-                    setPatronEmail(val);
+                    setUserEmail(val);
                     setEmailError(validateEmail(val));
                   }}
-                  placeholder="patron@raalahami.lk"
+                  placeholder="user@raalahami.lk"
                   required
                   error={emailError}
                   helperText={
                     isAuthenticated
-                      ? 'Pre-filled from verified patron profile'
+                      ? 'Pre-filled from verified user profile'
                       : 'Live receipt email verification enabled'
                   }
                 />
@@ -714,7 +715,7 @@ export const CheckoutPage = () => {
               <Mail size={18} style={{ flexShrink: 0, color: 'var(--accent-gold)' }} />
               <span>
                 An official royal culinary receipt will be dispatched to{' '}
-                <strong>{patronEmail || 'your email'}</strong> upon placement.
+                <strong>{userEmail || 'your email'}</strong> upon placement.
               </span>
             </div>
 
@@ -1239,9 +1240,9 @@ export const CheckoutPage = () => {
               }}
             >
               <div>
-                <span style={{ color: 'var(--text-muted)', display: 'block' }}>Patron:</span>
+                <span style={{ color: 'var(--text-muted)', display: 'block' }}>User:</span>
                 <strong style={{ color: 'var(--accent-gold)' }}>
-                  {recipientName.trim() || 'Guest Patron'}
+                  {recipientName.trim() || 'Guest User'}
                 </strong>
               </div>
               <div style={{ textAlign: 'right' }}>

@@ -17,6 +17,8 @@ const Input = ({
   helperText = null,
   className = '',
   disabled = false,
+  rightElement = null,
+  style = {},
   ...props
 }) => {
   const generatedId = useId();
@@ -52,30 +54,49 @@ const Input = ({
         </label>
       )}
 
-      <input
-        id={inputId}
-        name={name}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        required={required}
-        disabled={disabled}
-        aria-invalid={error ? 'true' : 'false'}
-        aria-describedby={describedBy}
-        style={{
-          width: '100%',
-          padding: '0.75rem 1rem',
-          fontSize: '0.95rem',
-          color: 'var(--text-primary)',
-          backgroundColor: 'var(--bg-secondary)',
-          border: error ? '1px solid var(--accent-danger)' : '1px solid var(--border-medium)',
-          borderRadius: 'var(--radius-md)',
-          outline: 'none',
-          transition: 'border-color var(--transition-fast)'
-        }}
-        {...props}
-      />
+      <div style={{ position: 'relative', width: '100%' }}>
+        <input
+          id={inputId}
+          name={name}
+          type={type}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          disabled={disabled}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={describedBy}
+          style={{
+            width: '100%',
+            padding: rightElement ? '0.75rem 2.75rem 0.75rem 1rem' : '0.75rem 1rem',
+            fontSize: '0.95rem',
+            color: 'var(--text-primary)',
+            backgroundColor: 'var(--bg-secondary)',
+            border: error ? '1px solid var(--accent-danger)' : '1px solid var(--border-medium)',
+            borderRadius: 'var(--radius-md)',
+            outline: 'none',
+            transition: 'border-color var(--transition-fast)',
+            ...style
+          }}
+          {...props}
+        />
+        {rightElement && (
+          <div
+            style={{
+              position: 'absolute',
+              right: '0.75rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2
+            }}
+          >
+            {rightElement}
+          </div>
+        )}
+      </div>
 
       {helperText && !error && (
         <p

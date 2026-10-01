@@ -140,7 +140,7 @@ const Footer = () => {
               Dining Reservations
             </Link>
             <Link to="/login" style={{ color: 'var(--accent-gold)' }}>
-              Staff & Patron Portal
+              Staff & User Portal
             </Link>
           </div>
         </div>

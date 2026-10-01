@@ -86,7 +86,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, onPasswordResetSuccess, i
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setError('Please provide a valid royal patron email address.');
+      setError('Please provide a valid royal user email address.');
       return;
     }
 
@@ -300,7 +300,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, onPasswordResetSuccess, i
                 Reset Password
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Enter your registered patron email to receive a confidential 6-digit authentication code.
+                Enter your registered user email to receive a confidential 6-digit authentication code.
               </p>
             </div>
 
@@ -343,7 +343,7 @@ export const ForgotPasswordModal = ({ isOpen, onClose, onPasswordResetSuccess, i
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="patron@raalahami.lk"
+                    placeholder="user@raalahami.lk"
                     required
                     autoFocus
                     autoComplete="email"

@@ -33,7 +33,7 @@ const ORDERS_PER_PAGE = 6;
  * Accessible Raalahami OrderTrackingPage
  * Ultra-Luxury Sri Lankan Royal Heritage Design System
  * Tracks live preparation and delivery milestones with dynamic Takeaway vs Delivery steppers
- * and Patron Feast History (Active, Completed & Cancelled).
+ * and User Feast History (Active, Completed & Cancelled).
  */
 export const OrderTrackingPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -47,7 +47,7 @@ export const OrderTrackingPage = () => {
   const [hasSearched, setHasSearched] = useState(false);
   const [validationError, setValidationError] = useState('');
 
-  // Patron Feast History State & Pagination (Authenticated Only)
+  // User Feast History State & Pagination (Authenticated Only)
   const [orderHistory, setOrderHistory] = useState([]);
   const [historyTab, setHistoryTab] = useState('active'); // 'active' | 'completed' | 'cancelled'
   const [historyPage, setHistoryPage] = useState(1);
@@ -77,13 +77,13 @@ export const OrderTrackingPage = () => {
     setHistoryPage(1);
   }, [historyTab]);
 
-  // Extract patron email ONLY if user is authenticated
-  const patronEmail = useMemo(() => {
+  // Extract user email ONLY if user is authenticated
+  const userEmail = useMemo(() => {
     if (!isAuthenticated || !user) return null;
     return user.email || user.customerEmail || null;
   }, [isAuthenticated, user]);
 
-  // Fetch Order History for Authenticated Patron
+  // Fetch Order History for Authenticated User
   const fetchOrderHistory = useCallback(async (email) => {
     if (!email || !isAuthenticated) {
       setOrderHistory([]);
@@ -230,12 +230,12 @@ export const OrderTrackingPage = () => {
     return () => clearInterval(pollInterval);
   }, [currentOrder?.id, currentOrder?.order_number, searchedId]);
 
-  // Initial order history fetch on email availability for authenticated patrons
+  // Initial order history fetch on email availability for authenticated users
   useEffect(() => {
-    if (isAuthenticated && patronEmail) {
-      fetchOrderHistory(patronEmail);
+    if (isAuthenticated && userEmail) {
+      fetchOrderHistory(userEmail);
     }
-  }, [patronEmail, fetchOrderHistory, isAuthenticated]);
+  }, [userEmail, fetchOrderHistory, isAuthenticated]);
 
   // Auto-switch history tab to completed if no active feasts and completed feasts exist
   useEffect(() => {
@@ -658,7 +658,7 @@ export const OrderTrackingPage = () => {
                   size="md"
                   onClick={() => {
                     setHistoryTab('completed');
-                    document.getElementById('patron-feast-history')?.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('user-feast-history')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                 >
                   <CheckCircle2 size={16} style={{ marginRight: '0.4rem', color: '#10B981' }} /> View Completed Feasts ({completedFeasts.length})
@@ -668,9 +668,9 @@ export const OrderTrackingPage = () => {
           </div>
         )}
 
-        {/* PATRON FEAST HISTORY SECTION (AUTHENTICATED PATRONS ONLY) */}
+        {/* USER FEAST HISTORY SECTION (AUTHENTICATED USERS ONLY) */}
         {isAuthenticated && user && (
-          <div id="patron-feast-history" style={{ marginTop: '4rem' }}>
+          <div id="user-feast-history" style={{ marginTop: '4rem' }}>
             <div
               style={{
                 display: 'flex',
@@ -687,18 +687,18 @@ export const OrderTrackingPage = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <History size={20} color="var(--accent-gold)" />
                 <h2 style={{ fontSize: '1.4rem', color: 'var(--text-primary)', margin: 0, fontWeight: '700' }}>
-                  Patron Feast History
+                  User Feast History
                 </h2>
               </div>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
-                Account Feasts for <strong style={{ color: 'var(--accent-gold)' }}>{patronEmail}</strong>
+                Account Feasts for <strong style={{ color: 'var(--accent-gold)' }}>{userEmail}</strong>
               </p>
             </div>
 
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => fetchOrderHistory(patronEmail)}
+              onClick={() => fetchOrderHistory(userEmail)}
               isLoading={isHistoryLoading}
               style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}
             >
@@ -978,7 +978,7 @@ export const OrderTrackingPage = () => {
                 totalPages={totalHistoryPages}
                 onPageChange={(page) => {
                   setHistoryPage(page);
-                  document.getElementById('patron-feast-history')?.scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('user-feast-history')?.scrollIntoView({ behavior: 'smooth' });
                 }}
                 itemsPerPage={ORDERS_PER_PAGE}
                 totalItems={currentDisplayHistory.length}

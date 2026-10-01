@@ -839,7 +839,7 @@ export const HomePage = () => {
               In the historic chieftain mansions of Sri Lanka, a "Raalahami" was revered as a guardian of regional culinary culture and noble hospitality. Feasts were curated with unhurried devotion: roasted cinnamon bark from Negombo, fragrant cardamom from the central highlands, and pure virgin coconut milk pressed at sunrise.
             </p>
             <p style={{ textShadow: '0 2px 8px rgba(0,0,0,0.75)', color: 'var(--text-muted)', fontSize: '0.98rem', lineHeight: '1.7' }}>
-              Every dish honors that legacy with zero compromises on quality, ethical local sourcing, and warm hospitality for every patron who crosses our threshold.
+              Every dish honors that legacy with zero compromises on quality, ethical local sourcing, and warm hospitality for every guest who crosses our threshold.
             </p>
           </div>
         </div>

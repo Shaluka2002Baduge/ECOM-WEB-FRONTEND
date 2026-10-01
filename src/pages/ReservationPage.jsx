@@ -516,7 +516,7 @@ export const ReservationPage = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="patron@example.com"
+                placeholder="user@example.com"
                 error={formErrors.email}
                 required
               />

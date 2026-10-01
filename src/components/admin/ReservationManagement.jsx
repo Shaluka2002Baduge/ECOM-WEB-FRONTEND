@@ -152,13 +152,14 @@ export const ReservationManagement = ({ onNotify }) => {
         });
 
         if (activeBooking) {
-          const patronName =
-            activeBooking.patron_name ||
+          const guestName =
+            activeBooking.user_name ||
             activeBooking.customer_name ||
             activeBooking.customerName ||
+            activeBooking.patron_name ||
             activeBooking.guest ||
             activeBooking.recipientName ||
-            'Royal Patron';
+            'Royal Guest';
 
           const orderId =
             activeBooking.order_number ||
@@ -179,7 +180,9 @@ export const ReservationManagement = ({ onNotify }) => {
             2;
 
           const bookingDetails = {
-            patron_name: patronName,
+            user_name: guestName,
+            patron_name: guestName,
+            customer_name: guestName,
             order_id: orderId,
             time: timeSlot,
             party_size: partyCount
@@ -191,7 +194,7 @@ export const ReservationManagement = ({ onNotify }) => {
               status: 'OCCUPIED',
               reservation: activeBooking,
               bookingDetails,
-              currentBooking: `Seated • ${patronName} (${partyCount} Guests)`
+              currentBooking: `Seated • ${guestName} (${partyCount} Guests)`
             };
           }
           return {
@@ -199,7 +202,7 @@ export const ReservationManagement = ({ onNotify }) => {
             status: 'RESERVED',
             reservation: activeBooking,
             bookingDetails,
-            currentBooking: `${timeSlot} • ${patronName} (${partyCount} Guests)`
+            currentBooking: `${timeSlot} • ${guestName} (${partyCount} Guests)`
           };
         }
 
@@ -230,22 +233,24 @@ export const ReservationManagement = ({ onNotify }) => {
             fetchedList = resData
               .filter((r) => !isRecordDeleted(r) && r.status !== 'CANCELLED')
               .map((r) => {
-                const patronName =
-                  r.patron_name ||
+                const guestName =
+                  r.user_name ||
                   r.customer_name ||
                   r.customerName ||
+                  r.patron_name ||
                   r.guest ||
                   r.recipientName ||
                   r.name ||
-                  'Royal Patron';
+                  'Royal Guest';
                 const orderId = r.order_number || r.order_id || r.orderId || r.orderNumber || null;
                 return {
                   ...r,
                   id: r.id || r._id,
                   order_number: r.order_number || orderId,
-                  patron_name: patronName,
-                  customer_name: patronName,
-                  guest: patronName,
+                  user_name: guestName,
+                  customer_name: guestName,
+                  patron_name: guestName,
+                  guest: guestName,
                   order_id: orderId,
                   orderId: orderId,
                   hall: r.hall || r.seating_preference || r.area || 'Royal Dining Hall',
@@ -347,25 +352,28 @@ export const ReservationManagement = ({ onNotify }) => {
             ord.assignedTable ||
             'Table 1';
 
-          const patronName =
+          const guestName =
             ord.customer_name ||
             ord.customerName ||
+            ord.user_name ||
             ord.recipientName ||
             ord.fullName ||
             ord.name ||
-            resObj.patron_name ||
+            resObj.user_name ||
             resObj.customer_name ||
+            resObj.patron_name ||
             ord.guest ||
-            'Royal Patron';
+            'Royal Guest';
 
           normalizedDineIn.push({
             id: orderId,
             order_id: orderId,
             orderId: orderId,
             order_number: ord.order_number || orderId,
-            patron_name: patronName,
-            customer_name: patronName,
-            guest: patronName,
+            user_name: guestName,
+            customer_name: guestName,
+            patron_name: guestName,
+            guest: guestName,
             phone: ord.phone || ord.contactPhone || ord.customerPhone || '+94 77 123 4567',
             email: ord.customerEmail || ord.email || '',
             hall: hallName,
@@ -678,10 +686,11 @@ export const ReservationManagement = ({ onNotify }) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
-      (r.patron_name && r.patron_name.toLowerCase().includes(q)) ||
-      (r.guest && r.guest.toLowerCase().includes(q)) ||
+      (r.user_name && r.user_name.toLowerCase().includes(q)) ||
       (r.customer_name && r.customer_name.toLowerCase().includes(q)) ||
       (r.customerName && r.customerName.toLowerCase().includes(q)) ||
+      (r.patron_name && r.patron_name.toLowerCase().includes(q)) ||
+      (r.guest && r.guest.toLowerCase().includes(q)) ||
       (r.phone && r.phone.toLowerCase().includes(q)) ||
       (r.email && r.email.toLowerCase().includes(q)) ||
       (r.table && r.table.toLowerCase().includes(q)) ||
@@ -958,7 +967,7 @@ export const ReservationManagement = ({ onNotify }) => {
                           >
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem', flexWrap: 'wrap' }}>
                               <strong style={{ color: 'var(--accent-gold)', fontSize: '0.86rem' }}>
-                                {tbl.bookingDetails?.patron_name || tbl.reservation?.patron_name || tbl.currentBooking}
+                                {tbl.bookingDetails?.user_name || tbl.bookingDetails?.patron_name || tbl.reservation?.user_name || tbl.reservation?.patron_name || tbl.currentBooking}
                               </strong>
                               {(tbl.bookingDetails?.order_id || tbl.reservation?.order_id) && (
                                 <span className="text-xs bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/30 font-mono">
@@ -1064,7 +1073,7 @@ export const ReservationManagement = ({ onNotify }) => {
                     <tr key={res.id} style={{ borderBottom: '1px solid rgba(42, 48, 66, 0.4)' }}>
                       <td style={{ padding: '0.85rem 0.5rem' }}>
                         <strong style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.92rem' }}>
-                          {res.patron_name || res.customer_name || res.guest || res.customerName || res.recipientName || 'Royal Patron'}
+                          {res.user_name || res.customer_name || res.guest || res.customerName || res.recipientName || res.patron_name || 'Royal Guest'}
                         </strong>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                           {res.phone || '+94 77 123 4567'} {res.email ? `• ${res.email}` : ''}

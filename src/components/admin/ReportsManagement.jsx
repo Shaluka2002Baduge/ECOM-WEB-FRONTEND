@@ -14,7 +14,7 @@ export const ReportsManagement = () => {
     <section aria-label="Financial and Operations Reports" className="fade-in">
       <div style={{ marginBottom: '1.5rem' }}>
         <h2 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', margin: 0 }}>
-          Executive Financial Velocity & Patron Intelligence
+          Executive Financial Velocity & User Intelligence
         </h2>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.25rem 0 0 0' }}>
           Real-time Gross Revenue, AOV, Table Turnover, and Culinary Line Margins.

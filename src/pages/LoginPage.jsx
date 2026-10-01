@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Input from '../components/common/Input';
 import Button from '../components/common/Button';
@@ -8,7 +9,7 @@ import ForgotPasswordModal from '../components/auth/ForgotPasswordModal';
 import { isValidEmail } from '../utils/validators';
 
 /**
- * Accessible LoginPage / Patron Portal
+ * Accessible LoginPage / User Portal
  * Authenticates against backend POST /api/auth/login
  * Performs dynamic role-based redirection to /admin, /kitchen, or /menu
  */
@@ -19,6 +20,7 @@ export const LoginPage = () => {
 
   const [email, setEmail] = useState(() => location.state?.prefillEmail || '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [localError, setLocalError] = useState(null);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [successNotification, setSuccessNotification] = useState(
@@ -45,7 +47,7 @@ export const LoginPage = () => {
 
     const cleanEmail = (email || '').trim();
     if (!cleanEmail || !isValidEmail(cleanEmail)) {
-      setLocalError('Please enter a valid email address (e.g. patron@raalahami.lk).');
+      setLocalError('Please enter a valid email address (e.g. user@raalahami.lk).');
       return;
     }
 
@@ -117,7 +119,7 @@ export const LoginPage = () => {
             R
           </div>
           <h1 style={{ fontSize: '1.85rem', marginBottom: '0.4rem', color: 'var(--text-primary)' }}>
-            Patron & Staff Portal
+            LOGIN AS A USER
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             Sign in with your registered credentials to access your dedicated portal.
@@ -164,20 +166,48 @@ export const LoginPage = () => {
             id="login-email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="e.g. patron@raalahami.lk"
+            placeholder="e.g. user@raalahami.lk"
             required
             autoComplete="email"
           />
 
           <Input
             label="Password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             id="login-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
             autoComplete="current-password"
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: '0.3rem',
+                  cursor: 'pointer',
+                  color: showPassword ? 'var(--accent-gold)' : 'var(--text-muted)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: 'var(--radius-sm)',
+                  transition: 'color var(--transition-fast), transform var(--transition-fast)'
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--accent-gold)')}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = showPassword
+                    ? 'var(--accent-gold)'
+                    : 'var(--text-muted)')
+                }
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            }
           />
 
           {/* Luxury Forgot Password Trigger Link */}
@@ -234,7 +264,7 @@ export const LoginPage = () => {
               paddingTop: '1.25rem'
             }}
           >
-            New patron to Raalahami?{' '}
+            New user to Raalahami?{' '}
             <Link to="/register" style={{ color: 'var(--accent-gold)', fontWeight: '600' }}>
               Create Account
             </Link>

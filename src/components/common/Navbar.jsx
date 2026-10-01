@@ -22,7 +22,7 @@ const Navbar = () => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Base public links available to all patrons
+  // Base public links available to all users
   const baseLinks = [
     { label: 'Home', path: '/' },
     { label: 'Royal Menu', path: '/menu' },

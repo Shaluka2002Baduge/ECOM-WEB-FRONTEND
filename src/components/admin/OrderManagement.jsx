@@ -34,7 +34,7 @@ const ORDERS_PER_PAGE = 8;
 
 /**
  * Dedicated Admin Order Fulfillment & Dispatch Center
- * Prevents status bounce-back and synchronizes patron order tracking in real-time.
+ * Prevents status bounce-back and synchronizes user order tracking in real-time.
  */
 export const OrderManagement = ({ onNotify }) => {
   const { toast } = useToast();
@@ -534,7 +534,7 @@ export const OrderManagement = ({ onNotify }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <div style={{ flex: '1 1 280px', position: 'relative', maxWidth: '480px' }}>
             <Input
-              placeholder="Search reference #, patron name, phone, table, address..."
+              placeholder="Search reference #, user name, phone, table, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="m-0"
@@ -687,14 +687,14 @@ export const OrderManagement = ({ onNotify }) => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {paginatedOrders.map((order) => {
-            const patronRef =
+            const userRef =
               order.order_number ||
               order.orderNumber ||
               (order.id ? (String(order.id).startsWith('RAALAHAMI') ? order.id : `ORD-${order.id}`) : 'ORD-NEW');
-            const cleanPatronRef = (patronRef || '').toString().replace('#', '').trim();
-            const dbId = order.id && String(order.id) !== cleanPatronRef ? order.id : null;
-            const orderId = cleanPatronRef;
-            const cleanId = cleanPatronRef;
+            const cleanUserRef = (userRef || '').toString().replace('#', '').trim();
+            const dbId = order.id && String(order.id) !== cleanUserRef ? order.id : null;
+            const orderId = cleanUserRef;
+            const cleanId = cleanUserRef;
             const currentStatus = (order.status || 'PENDING').toUpperCase();
             const { type, isDineIn, isTakeaway, stages, displayStages } = getFulfillmentInfo(order);
 
@@ -709,7 +709,7 @@ export const OrderManagement = ({ onNotify }) => {
 
             return (
               <div
-                key={cleanPatronRef || order.id}
+                key={cleanUserRef || order.id}
                 className="glass-panel"
                 style={{
                   padding: '1.5rem',
@@ -743,7 +743,7 @@ export const OrderManagement = ({ onNotify }) => {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                         <h3 style={{ fontSize: '1.25rem', color: 'var(--accent-gold)', margin: 0, fontWeight: '700', letterSpacing: '0.02em' }}>
-                          #{cleanPatronRef}
+                          #{cleanUserRef}
                         </h3>
                         {dbId && (
                           <span
@@ -845,10 +845,10 @@ export const OrderManagement = ({ onNotify }) => {
                     marginBottom: '1.5rem'
                   }}
                 >
-                  {/* Patron Details */}
+                  {/* User Details */}
                   <div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '0.4rem' }}>
-                      Patron Details
+                      User Details
                     </div>
                     <div style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: '600' }}>
                       {order.customer_name || order.recipientName || order.name || 'Honored Guest'}
@@ -1191,7 +1191,7 @@ export const OrderManagement = ({ onNotify }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                 <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Customer</span>
                 <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
-                  {selectedOrderDetails.customer_name || selectedOrderDetails.recipientName || 'Patron'}
+                  {selectedOrderDetails.customer_name || selectedOrderDetails.recipientName || 'User'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>

@@ -300,7 +300,7 @@ export const AdminLayout = () => {
           })}
         </nav>
 
-        {/* Sidebar Footer: Patron Portal link & Admin identity pill */}
+        {/* Sidebar Footer: User Portal link & Admin identity pill */}
         <div
           style={{
             padding: '1rem',
@@ -328,7 +328,7 @@ export const AdminLayout = () => {
               transition: 'all var(--transition-fast)'
             }}
           >
-            <span>Preview Patron Menu</span>
+            <span>Preview User Menu</span>
             <ExternalLink size={13} />
           </Link>
         </div>
