@@ -48,6 +48,27 @@ export const InventoryManagement = ({ onNotify }) => {
 
   useEffect(() => {
     fetchInventory();
+
+    // Auto-sync inventory data in real-time
+    const interval = setInterval(() => {
+      fetchInventory(true);
+    }, 5000);
+
+    const handleFocus = () => fetchInventory(true);
+    const handleUpdate = () => fetchInventory(true);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('inventory-updated', handleUpdate);
+    window.addEventListener('order-placed', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('inventory-updated', handleUpdate);
+      window.removeEventListener('order-placed', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
   }, [fetchInventory]);
 
   // Reset page to 1 on filter or search change
@@ -173,6 +194,12 @@ export const InventoryManagement = ({ onNotify }) => {
         }
       }
 
+      // Broadcast real-time inventory update event to user menu and across tabs
+      window.dispatchEvent(new CustomEvent('ralahami_inventory_updated', { detail: { action: 'save', item: savedData, id } }));
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('ralahami_inventory_sync', Date.now().toString());
+      }
+
       // Re-sync with backend database
       await fetchInventory(true);
     } catch (err) {
@@ -193,6 +220,12 @@ export const InventoryManagement = ({ onNotify }) => {
 
         // Backend Database Deletion
         await inventoryService.deleteInventoryItem(item.id);
+
+        // Broadcast real-time inventory deletion event to user menu and across tabs
+        window.dispatchEvent(new CustomEvent('ralahami_inventory_updated', { detail: { action: 'delete', itemId: item.id } }));
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('ralahami_inventory_sync', Date.now().toString());
+        }
 
         if (typeof onNotify === 'function') {
           onNotify({
@@ -366,14 +399,85 @@ export const InventoryManagement = ({ onNotify }) => {
               return (
                 <tr key={item.id} style={{ borderBottom: '1px solid rgba(42, 48, 66, 0.4)' }}>
                   <td style={{ padding: '0.85rem 0.5rem' }}>
-                    <strong style={{ color: 'var(--text-primary)', display: 'block' }}>{item.name}</strong>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Supplier: {item.supplier || 'Local Supplier'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      {item.image || item.image_url ? (
+                        <img
+                          src={item.image || item.image_url}
+                          alt={item.name}
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: 'var(--radius-sm, 6px)',
+                            objectFit: 'cover',
+                            border: '1px solid rgba(212, 175, 55, 0.35)',
+                            flexShrink: 0,
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)'
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: 'var(--radius-sm, 6px)',
+                            backgroundColor: 'rgba(212, 175, 55, 0.12)',
+                            border: '1px solid rgba(212, 175, 55, 0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--accent-gold, #D4AF37)',
+                            fontSize: '1.1rem',
+                            flexShrink: 0
+                          }}
+                        >
+                          📦
+                        </div>
+                      )}
+                      <div>
+                        <strong style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.95rem' }}>{item.name}</strong>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: item.variants?.length ? '0.35rem' : 0 }}>
+                          Supplier: <span style={{ color: 'var(--text-secondary)' }}>{item.supplier || 'Local Supplier'}</span>
+                        </div>
+                        {Array.isArray(item.variants) && item.variants.length > 0 && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginTop: '0.3rem' }}>
+                            {item.variants.map((v, vIdx) => (
+                              <span
+                                key={vIdx}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem',
+                                  padding: '0.15rem 0.45rem',
+                                  fontSize: '0.7rem',
+                                  borderRadius: '4px',
+                                  backgroundColor: 'rgba(212, 175, 55, 0.1)',
+                                  border: '1px solid rgba(212, 175, 55, 0.25)',
+                                  color: 'var(--text-primary)'
+                                }}
+                              >
+                                <strong style={{ color: 'var(--accent-gold, #D4AF37)' }}>{v.size}:</strong>
+                                <span>{v.stock} qty</span>
+                                {v.price ? <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem' }}>@ Rs.{v.price}</span> : null}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     {item.category || 'General'}
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '1rem', fontWeight: '700', color: isLow ? 'var(--accent-danger)' : 'var(--text-primary)' }}>
-                    {item.stock} {item.unit || 'kg'}
+                    <div>{item.stock} {item.unit || 'kg'}</div>
+                    {Array.isArray(item.variants) && item.variants.length > 0 && (
+                      <span style={{ fontSize: '0.7rem', fontWeight: '500', color: 'var(--accent-gold, #D4AF37)', display: 'block' }}>
+                        ({item.variants.length} size variants)
+                      </span>
+                    )}
                   </td>
                   <td style={{ padding: '0.85rem 0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                     Min {item.threshold} {item.unit || 'kg'}

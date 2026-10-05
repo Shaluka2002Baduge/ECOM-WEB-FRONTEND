@@ -322,16 +322,35 @@ export const CheckoutPage = () => {
     setError(null);
 
     const items = cartItems.map((item) => {
-      const resolvedId = item.id || item.menu_item_id || item.menuItemId || item._id;
+      const resolvedId = item.id || item.menu_item_id || item.menuItemId || item.inventoryItemId || item.inventory_item_id || item._id;
       const rawPrice = Number(item.price);
       const rawQty = Number(item.quantity || 1);
+      const selectedSize = item.selectedSize || item.size || item.variant || null;
+      const isInv = Boolean(
+        item.is_inventory_item ||
+        item.is_inventory_synced ||
+        item.item_source === 'inventory' ||
+        item.source === 'inventory' ||
+        item.category_id === 7 ||
+        String(item.category_id) === '7' ||
+        item.inventoryItemId ||
+        item.inventory_item_id
+      );
+
       return {
         id: Number(resolvedId) || resolvedId,
-        menu_item_id: Number(resolvedId) || resolvedId,
-        menuItemId: Number(resolvedId) || resolvedId,
+        menu_item_id: !isInv ? (Number(resolvedId) || resolvedId) : null,
+        menuItemId: !isInv ? (Number(resolvedId) || resolvedId) : null,
+        inventory_item_id: isInv ? (Number(resolvedId) || resolvedId) : null,
+        inventoryItemId: isInv ? (Number(resolvedId) || resolvedId) : null,
+        is_inventory_item: isInv,
+        item_source: isInv ? 'inventory' : 'menu',
         name: sanitizeInput(item.name || item.title || 'Signature Dish'),
         price: isValidPrice(rawPrice) ? rawPrice : 0,
-        quantity: isValidQuantity(rawQty) ? rawQty : 1
+        quantity: isValidQuantity(rawQty) ? rawQty : 1,
+        selectedSize,
+        size: selectedSize,
+        variant: selectedSize
       };
     });
 

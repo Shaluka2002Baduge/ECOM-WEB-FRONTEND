@@ -18,6 +18,32 @@ export const MenuCard = ({ item, dish: dishProp }) => {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [showNotesInput, setShowNotesInput] = useState(false);
 
+  // Category classification: determine if item is an inventory bottled beverage vs hand-crafted dish/drink
+  const catName = String(dish.category || dish.category_name || dish.categoryName || '').toLowerCase();
+  const isBeverageOrWaterBottle =
+    dish.category_id === 7 ||
+    String(dish.category_id) === '7' ||
+    catName.includes('beverage') ||
+    catName.includes('water bottle') ||
+    dish.is_inventory_synced === true ||
+    dish.is_inventory_item === true ||
+    dish.item_source === 'inventory';
+
+  // Variant size selection (Strictly for Beverages & Water Bottles from Inventory)
+  const variants = isBeverageOrWaterBottle && Array.isArray(dish.variants) && dish.variants.length > 0
+    ? dish.variants
+    : [];
+
+  const [selectedSize, setSelectedSize] = useState(() => (variants.length > 0 ? variants[0].size : null));
+
+  const selectedVariant = variants.length > 0
+    ? variants.find((v) => v.size === selectedSize) || variants[0]
+    : null;
+
+  const currentPrice = selectedVariant && selectedVariant.price !== undefined
+    ? Number(selectedVariant.price)
+    : Number(dish.price || 0);
+
   // Check Availability Status
   const isAvailable =
     dish.is_available === false ||
@@ -37,7 +63,16 @@ export const MenuCard = ({ item, dish: dishProp }) => {
     if (!isAvailable) return;
 
     setIsAdding(true);
-    addItem(dish, 1, specialInstructions);
+    const itemToAdd = {
+      ...dish,
+      price: currentPrice,
+      selectedSize: selectedVariant ? selectedVariant.size : null,
+      size: selectedVariant ? selectedVariant.size : null,
+      name: selectedVariant ? `${dish.name} (${selectedVariant.size})` : dish.name,
+      inventoryName: selectedVariant?.inventoryName || null
+    };
+
+    addItem(itemToAdd, 1, specialInstructions);
 
     setTimeout(() => {
       setIsAdding(false);
@@ -52,7 +87,15 @@ export const MenuCard = ({ item, dish: dishProp }) => {
   };
 
   // Convert spiceLevel number (0-5) to chili icons
-  const spiceCount = typeof dish.spiceLevel === 'number' ? dish.spiceLevel : (typeof dish.spice_level === 'number' ? dish.spice_level : 0);
+  const isDrink =
+    dish.category_id === 6 ||
+    dish.category_id === 7 ||
+    catName.includes('drink') ||
+    catName.includes('beverage') ||
+    catName.includes('water') ||
+    dish.is_inventory_synced;
+
+  const spiceCount = isDrink ? 0 : (typeof dish.spiceLevel === 'number' ? dish.spiceLevel : (typeof dish.spice_level === 'number' ? dish.spice_level : 0));
   const spiceLabels = ['Mild', 'Gently Spiced', 'Medium Heat', 'Fiery Heat', 'Royal Spicy', 'Ceylon Volcanic'];
 
   return (
@@ -248,7 +291,7 @@ export const MenuCard = ({ item, dish: dishProp }) => {
               whiteSpace: 'nowrap'
             }}
           >
-            {formatPrice(dish.price)}
+            {formatPrice(currentPrice)}
           </span>
         </div>
 
@@ -258,12 +301,68 @@ export const MenuCard = ({ item, dish: dishProp }) => {
             fontSize: '0.875rem',
             color: 'var(--text-secondary, #94A3B8)',
             lineHeight: '1.55',
-            marginBottom: '1rem',
+            marginBottom: '0.85rem',
             flex: 1
           }}
         >
           {dish.description}
         </p>
+
+        {/* Variant Size Selector STRICTLY for Beverages & Water Bottles (500ml, 1L, 1.5L, 2L) */}
+        {isBeverageOrWaterBottle && variants.length > 0 && isAvailable && (
+          <div style={{ marginBottom: '1rem' }}>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                fontWeight: '700',
+                color: 'var(--accent-gold, #D4AF37)',
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: '0.4rem'
+              }}
+            >
+              Select Portion / Bottle Size:
+            </span>
+            <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+              {variants.map((v) => {
+                const isSelected = (selectedSize || variants[0]?.size) === v.size;
+                return (
+                  <button
+                    key={v.size}
+                    type="button"
+                    onClick={() => setSelectedSize(v.size)}
+                    aria-pressed={isSelected ? 'true' : 'false'}
+                    aria-label={`Select ${v.size} size for ${formatPrice(v.price)}`}
+                    style={{
+                      flex: 1,
+                      minWidth: '55px',
+                      padding: '0.4rem 0.5rem',
+                      borderRadius: 'var(--radius-sm, 6px)',
+                      fontSize: '0.78rem',
+                      fontWeight: isSelected ? '800' : '600',
+                      backgroundColor: isSelected ? 'rgba(212, 175, 55, 0.22)' : 'rgba(255, 255, 255, 0.05)',
+                      color: isSelected ? 'var(--accent-gold, #D4AF37)' : 'var(--text-secondary, #94A3B8)',
+                      border: isSelected ? '1px solid var(--accent-gold, #D4AF37)' : '1px solid rgba(255, 255, 255, 0.12)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 0 10px rgba(212, 175, 55, 0.25)' : 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <span>{v.size}</span>
+                    <span style={{ fontSize: '0.68rem', opacity: isSelected ? 1 : 0.8, marginTop: '2px' }}>
+                      {formatPrice(v.price)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Optional Custom Instructions Input */}
         {showNotesInput && isAvailable && (

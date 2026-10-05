@@ -425,7 +425,7 @@ export const HomePage = () => {
                   textShadow: '0 2px 8px rgba(0, 0, 0, 0.75)'
                 }}
               >
-                Immerse yourself in authentic Dutch Burgher Lamprais, fiery Jaffna lagoon crab, and slow-braised heirloom curries wrapped in fragrant banana leaves. Delivered fresh to your residence or reserved exclusively for your court.
+                Immerse yourself in our signature Black Pork Curry, authentic Lamprais, aromatic Clay Pot Biriyani, and refreshing Sri Lankan fresh drinks, delivered fresh to your residence or reserved exclusively for your court.
               </p>
 
               {/* Action Buttons */}

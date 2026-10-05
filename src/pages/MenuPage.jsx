@@ -21,22 +21,64 @@ export const MenuPage = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
+    let isMounted = true;
+
+    async function loadData(showLoader = true) {
+      if (showLoader) setIsLoading(true);
       try {
         const [cats, menuData] = await Promise.all([
           menuService.getCategories(),
           menuService.getMenuItems('All', '')
         ]);
-        setCategories(cats);
-        setItems(menuData);
+        if (isMounted) {
+          if (Array.isArray(cats) && cats.length > 0) {
+            setCategories(cats);
+          }
+          if (Array.isArray(menuData)) {
+            setItems(menuData);
+          }
+        }
       } catch (e) {
         console.error('Error loading menu:', e);
       } finally {
-        setIsLoading(false);
+        if (isMounted && showLoader) {
+          setIsLoading(false);
+        }
       }
     }
-    loadData();
+
+    // Initial mount load
+    loadData(true);
+
+    // Event handlers for real-time inventory and menu updates across the app
+    const handleSyncEvent = () => {
+      loadData(false);
+    };
+
+    const handleStorageChange = (e) => {
+      if (e.key === 'ralahami_inventory_sync' || e.key === 'ralahami_menu_sync') {
+        loadData(false);
+      }
+    };
+
+    window.addEventListener('ralahami_inventory_updated', handleSyncEvent);
+    window.addEventListener('ralahami_menu_updated', handleSyncEvent);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleSyncEvent);
+
+    // Light periodic polling (every 3.5s) to guarantee real-time reflection
+    const pollInterval = setInterval(() => {
+      loadData(false);
+    }, 3500);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('ralahami_inventory_updated', handleSyncEvent);
+      window.removeEventListener('ralahami_menu_updated', handleSyncEvent);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleSyncEvent);
+      clearInterval(pollInterval);
+    };
   }, []);
 
   // Reset page to 1 whenever filters change
@@ -47,8 +89,39 @@ export const MenuPage = () => {
   // Filter items locally for responsive experience
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const matchesCategory =
-        activeCategory === 'All' || item.category.toLowerCase() === activeCategory.toLowerCase();
+      const itemCat = (item.category || '').toLowerCase().trim();
+      const activeCat = activeCategory.toLowerCase().trim();
+
+      let matchesCategory = false;
+      if (activeCat === 'all') {
+        matchesCategory = true;
+      } else if (
+        activeCat === 'crafted drinks' ||
+        activeCat === 'hand crafted drinks' ||
+        activeCat === 'crafted-drinks' ||
+        activeCat === 'hand-crafted-drinks'
+      ) {
+        matchesCategory =
+          itemCat === 'crafted drinks' ||
+          itemCat === 'hand crafted drinks' ||
+          itemCat === 'craft beverages' ||
+          (!item.is_inventory_item && (itemCat.includes('crafted') || (itemCat.includes('drink') && !itemCat.includes('bottle'))));
+      } else if (
+        activeCat === 'beverages & water bottles' ||
+        activeCat === 'water bottles & beverages' ||
+        activeCat === 'beverages-water-bottles'
+      ) {
+        matchesCategory =
+          itemCat === 'beverages & water bottles' ||
+          itemCat === 'water bottles & beverages' ||
+          item.is_inventory_item === true;
+      } else if (itemCat === activeCat) {
+        matchesCategory = true;
+      } else if (item.originalCategory && item.originalCategory.toLowerCase().trim() === activeCat) {
+        matchesCategory = true;
+      } else if (itemCat.includes(activeCat) || activeCat.includes(itemCat)) {
+        matchesCategory = true;
+      }
 
       const matchesSearch =
         searchQuery === '' ||

@@ -11,15 +11,15 @@ export const CartItem = ({ item }) => {
   const { updateQuantity, removeItem } = useCart();
 
   const handleDecrement = () => {
-    updateQuantity(item.id, item.quantity - 1, item.specialInstructions);
+    updateQuantity(item.id, item.quantity - 1, item.specialInstructions, item.selectedSize);
   };
 
   const handleIncrement = () => {
-    updateQuantity(item.id, item.quantity + 1, item.specialInstructions);
+    updateQuantity(item.id, item.quantity + 1, item.specialInstructions, item.selectedSize);
   };
 
   const handleRemove = () => {
-    removeItem(item.id, item.specialInstructions);
+    removeItem(item.id, item.specialInstructions, item.selectedSize);
   };
 
   return (

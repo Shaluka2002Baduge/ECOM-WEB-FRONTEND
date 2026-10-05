@@ -6,7 +6,9 @@ import {
   Edit3,
   Sparkles,
   RefreshCw,
-  UtensilsCrossed
+  UtensilsCrossed,
+  Lock,
+  Package
 } from 'lucide-react';
 import axios from 'axios';
 import { menuService, FALLBACK_MENU_ITEMS } from '../../services/menuService';
@@ -25,7 +27,9 @@ const CATEGORY_MAP = {
   2: 'Seafood',
   3: 'Starters',
   4: 'Vegetarian',
-  5: 'Desserts'
+  5: 'Desserts',
+  6: 'Crafted Drinks',
+  7: 'Beverages & Water Bottles'
 };
 
 const getDishCategory = (dish) => {
@@ -48,6 +52,15 @@ const getDishCategory = (dish) => {
   return 'Mains';
 };
 
+export const isInventorySyncedItem = (dish) => {
+  if (!dish) return false;
+  if (dish.is_inventory_item === true || dish.is_inventory_synced === true) return true;
+  if (dish.item_source === 'inventory' || dish.source === 'inventory') return true;
+  const cat = String(dish.category_name || dish.category || '').toLowerCase();
+  if (cat.includes('beverage') || cat.includes('water bottle') || String(dish.category_id) === '7') return true;
+  return false;
+};
+
 export const MenuManagement = ({ onNotify }) => {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +68,7 @@ export const MenuManagement = ({ onNotify }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [menuSearch, setMenuSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [categories, setCategories] = useState(['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts']);
+  const [categories, setCategories] = useState(['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts', 'Crafted Drinks', 'Beverages & Water Bottles']);
 
   // Reset pagination on category or search filter change
   useEffect(() => {
@@ -102,9 +115,29 @@ export const MenuManagement = ({ onNotify }) => {
     }
   }, []);
 
-  // Initial Data Fetch
+  // Initial Data Fetch and Real-Time Event Listeners
   useEffect(() => {
     fetchMenuItems();
+
+    const handleSync = () => {
+      fetchMenuItems();
+    };
+
+    window.addEventListener('ralahami_menu_updated', handleSync);
+    window.addEventListener('ralahami_inventory_updated', handleSync);
+
+    const handleStorage = (e) => {
+      if (e.key === 'ralahami_menu_sync' || e.key === 'ralahami_inventory_sync') {
+        fetchMenuItems();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      window.removeEventListener('ralahami_menu_updated', handleSync);
+      window.removeEventListener('ralahami_inventory_updated', handleSync);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, [fetchMenuItems]);
 
   // Open Modal for Create or Edit
@@ -238,6 +271,11 @@ export const MenuManagement = ({ onNotify }) => {
 
     notify('success', 'Dish Updated', 'Dish changes updated successfully!');
 
+    window.dispatchEvent(new CustomEvent('ralahami_menu_updated', { detail: { action: 'update', dishId: selectedId } }));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('ralahami_menu_sync', Date.now().toString());
+    }
+
     try {
       await fetchMenuItems();
     } catch (e) {
@@ -279,24 +317,45 @@ export const MenuManagement = ({ onNotify }) => {
 
   // Delete Dish
   const handleDeleteDish = async (dish) => {
+    if (isInventorySyncedItem(dish)) {
+      notify(
+        'warning',
+        'Inventory-Synced Item',
+        `"${dish.name}" is managed in the Inventory section. To prevent synchronization breaks, please delete it directly from the Inventory & Stock tab.`
+      );
+      return;
+    }
+
     const dishId = dish.id || dish.menu_item_id || dish._id;
-    if (window.confirm(`Are you sure you want to remove "${dish.name}" from the active menu?`)) {
-      setMenuItems((prev) => prev.filter((item) => {
-        const id = item.id || item.menu_item_id || item._id;
-        return String(id) !== String(dishId);
-      }));
+    if (!dishId) return;
 
+    if (window.confirm(`Are you sure you want to remove "${dish.name}" from the active royal menu?`)) {
       try {
-        const apiBase = apiClient.baseUrl || 'http://localhost:5000/api';
-        await axios.delete(`${apiBase}/menu/${dishId}`).catch(async () => {
-          return await apiClient.delete(`/menu/${dishId}`);
-        });
-      } catch (e) {
-        console.warn('Delete dish API fallback:', e.message);
-      }
+        await menuService.deleteMenuItem(dishId);
 
-      notify('success', 'Dish Deleted', `"${dish.name}" was removed from the royal menu.`);
-      await fetchMenuItems();
+        setMenuItems((prev) =>
+          prev.filter((item) => {
+            const id = item.id || item.menu_item_id || item._id;
+            return String(id) !== String(dishId);
+          })
+        );
+
+        notify('success', 'Dish Deleted', `"${dish.name}" was removed from the royal menu.`);
+
+        window.dispatchEvent(
+          new CustomEvent('ralahami_menu_updated', {
+            detail: { action: 'delete', dishId }
+          })
+        );
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('ralahami_menu_sync', Date.now().toString());
+        }
+        await fetchMenuItems();
+      } catch (e) {
+        console.error('Delete dish error:', e);
+        notify('error', 'Delete Failed', e.response?.data?.message || e.message || 'Could not delete dish.');
+        await fetchMenuItems();
+      }
     }
   };
 
@@ -315,7 +374,15 @@ export const MenuManagement = ({ onNotify }) => {
       matchCat = true;
     } else if (CATEGORY_MAP[Number(dish.category_id)] && CATEGORY_MAP[Number(dish.category_id)].toLowerCase() === selCat.toLowerCase()) {
       matchCat = true;
-    } else if (dishCategory.toLowerCase().includes(selCat.toLowerCase()) || selCat.toLowerCase().includes(dishCategory.toLowerCase())) {
+    } else if (
+      (selCat.toLowerCase() === 'crafted drinks' || selCat.toLowerCase() === 'hand crafted drinks') &&
+      (dishCategory.toLowerCase() === 'crafted drinks' || dishCategory.toLowerCase() === 'hand crafted drinks' || Number(dish.category_id) === 6)
+    ) {
+      matchCat = true;
+    } else if (
+      (selCat.toLowerCase() === 'beverages & water bottles' || selCat.toLowerCase() === 'water bottles & beverages') &&
+      (dishCategory.toLowerCase().includes('beverage') || dishCategory.toLowerCase().includes('water bottle') || Number(dish.category_id) === 7)
+    ) {
       matchCat = true;
     }
 
@@ -494,6 +561,7 @@ export const MenuManagement = ({ onNotify }) => {
                   : typeof dish.dietary === 'string'
                   ? dish.dietary.split(',').map((s) => s.trim())
                   : [];
+                const isInventoryItem = isInventorySyncedItem(dish);
 
                 return (
                   <tr
@@ -504,7 +572,7 @@ export const MenuManagement = ({ onNotify }) => {
                       transition: 'background-color var(--transition-fast)'
                     }}
                   >
-                    {/* Dish Name, Image Thumbnail & Dietary */}
+                    {/* Dish Name, Source Badge, Image Thumbnail & Dietary */}
                     <td style={{ padding: '0.85rem 0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                         <div
@@ -533,8 +601,47 @@ export const MenuManagement = ({ onNotify }) => {
                           />
                         </div>
                         <div>
-                          <div style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
-                            {dish.name}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: '600', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                              {dish.name}
+                            </span>
+                            {isInventoryItem ? (
+                              <span
+                                className="badge"
+                                title="This product is dynamically synchronized from Inventory & Stock"
+                                style={{
+                                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                                  color: '#fbbf24',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                                  fontSize: '0.7rem',
+                                  padding: '0.1rem 0.45rem',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}
+                              >
+                                <Package size={11} /> Inventory Synced
+                              </span>
+                            ) : (
+                              <span
+                                className="badge"
+                                title="Hand-crafted royal culinary dish managed directly from Menu Suite"
+                                style={{
+                                  backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                                  color: '#60a5fa',
+                                  border: '1px solid rgba(59, 130, 246, 0.3)',
+                                  fontSize: '0.7rem',
+                                  padding: '0.1rem 0.45rem',
+                                  borderRadius: '4px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '3px'
+                                }}
+                              >
+                                <Sparkles size={11} /> Hand-Crafted
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                             {dietaryList.length > 0 ? dietaryList.join(' • ') : 'Standard Recipe'}
@@ -566,13 +673,25 @@ export const MenuManagement = ({ onNotify }) => {
 
                     {/* Spice Level Indicator */}
                     <td style={{ padding: '0.85rem 0.5rem', fontSize: '0.85rem' }}>
-                      {spiceCount > 0 ? (
-                        <span title={`Spice Level ${spiceCount}/5`}>
-                          {'🌶️'.repeat(spiceCount)}
-                        </span>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>Mild</span>
-                      )}
+                      {(() => {
+                        const catName = (getDishCategory(dish) || '').toLowerCase();
+                        const isDrink =
+                          catName.includes('drink') ||
+                          catName.includes('beverage') ||
+                          dish.category_id === 6 ||
+                          dish.category_id === 7 ||
+                          isInventoryItem;
+                        if (isDrink) {
+                          return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+                        }
+                        return spiceCount > 0 ? (
+                          <span title={`Spice Level ${spiceCount}/5`}>
+                            {'🌶️'.repeat(spiceCount)}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>Mild</span>
+                        );
+                      })()}
                     </td>
 
                     {/* Status Pill Toggle */}
@@ -598,9 +717,9 @@ export const MenuManagement = ({ onNotify }) => {
                       </button>
                     </td>
 
-                    {/* Edit & Delete Actions */}
+                    {/* Edit & Role-Protected Delete Actions */}
                     <td style={{ padding: '0.85rem 0.5rem', textAlign: 'right' }}>
-                      <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                      <div style={{ display: 'inline-flex', gap: '0.4rem', alignItems: 'center' }}>
                         <button
                           type="button"
                           onClick={() => handleOpenModal(dish)}
@@ -620,25 +739,50 @@ export const MenuManagement = ({ onNotify }) => {
                           <Edit3 size={13} />
                           Edit
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDish(dish)}
-                          style={{
-                            padding: '0.35rem 0.65rem',
-                            fontSize: '0.75rem',
-                            backgroundColor: 'transparent',
-                            border: '1px solid var(--accent-danger)',
-                            color: 'var(--accent-danger)',
-                            borderRadius: 'var(--radius-sm)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.3rem'
-                          }}
-                        >
-                          <Trash2 size={13} />
-                          Delete
-                        </button>
+                        {isInventoryItem ? (
+                          <button
+                            type="button"
+                            disabled
+                            title="Managed in Inventory — Delete or modify this item from the Inventory & Stock section to prevent synchronization breaks"
+                            style={{
+                              padding: '0.35rem 0.65rem',
+                              fontSize: '0.75rem',
+                              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                              border: '1px dashed rgba(255, 255, 255, 0.15)',
+                              color: 'var(--text-muted)',
+                              borderRadius: 'var(--radius-sm)',
+                              cursor: 'not-allowed',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem',
+                              opacity: 0.6
+                            }}
+                          >
+                            <Lock size={12} />
+                            Inventory Locked
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDish(dish)}
+                            style={{
+                              padding: '0.35rem 0.65rem',
+                              fontSize: '0.75rem',
+                              backgroundColor: 'transparent',
+                              border: '1px solid var(--accent-danger)',
+                              color: 'var(--accent-danger)',
+                              borderRadius: 'var(--radius-sm)',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                            title="Permanently remove this royal dish"
+                          >
+                            <Trash2 size={13} />
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

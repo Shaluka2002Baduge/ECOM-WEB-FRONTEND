@@ -83,19 +83,100 @@ export const FALLBACK_MENU_ITEMS = [
     calories: 360,
     preparationTime: '10 mins',
     available: true
+  },
+  {
+    id: 9,
+    name: 'Natural Mountain Spring Water Bottle',
+    category: 'Beverages & Water Bottles',
+    category_id: 7,
+    description: 'Pure, crisp natural mountain spring water bottled directly from pristine protected Ceylon watershed springs. Select your preferred bottle size.',
+    price: 150,
+    imageUrl: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?auto=format&fit=crop&w=800&q=80',
+    spiceLevel: 0,
+    dietary: ['Vegetarian', 'Vegan', 'Gluten-Free', 'Halal'],
+    calories: 0,
+    preparationTime: 'Instant',
+    available: true,
+    is_inventory_synced: true,
+    is_inventory_item: true,
+    item_source: 'inventory',
+    variants: [
+      { size: '500ml', price: 150, inventoryName: 'Natural Spring Water Bottle (500ml)' },
+      { size: '1L', price: 250, inventoryName: 'Natural Spring Water Bottle (1L)' },
+      { size: '1.5L', price: 350, inventoryName: 'Natural Spring Water Bottle (1.5L)' },
+      { size: '2L', price: 450, inventoryName: 'Natural Spring Water Bottle (2L)' }
+    ]
+  },
+  {
+    id: 16,
+    name: 'Cocacola',
+    category: 'Beverages & Water Bottles',
+    category_id: 7,
+    description: 'Fresh authentic Cocacola curated directly from our certified estates. Select your preferred bottle size.',
+    price: 350,
+    imageUrl: '/uploads/inv-1790845264830-169188868.jpeg',
+    spiceLevel: 0,
+    dietary: ['Vegetarian', 'Vegan', 'Halal', 'Chef Special'],
+    calories: 140,
+    preparationTime: 'Instant',
+    available: true,
+    is_inventory_synced: true,
+    is_inventory_item: true,
+    item_source: 'inventory',
+    variants: [
+      { size: '500ml', price: 350, inventoryName: 'Cocacola (500ml)' },
+      { size: '1L', price: 650, inventoryName: 'Cocacola (1L)' },
+      { size: '1.5L', price: 950, inventoryName: 'Cocacola (1.5L)' },
+      { size: '2L', price: 1250, inventoryName: 'Cocacola (2L)' }
+    ]
+  },
+  {
+    id: 11,
+    name: 'Chilled King Coconut Nectar (Thambili)',
+    category: 'Crafted Drinks',
+    category_id: 6,
+    description: 'Freshly tapped pure organic golden King Coconut water served cold over crushed ice with garden mint leaves and a squeeze of lime.',
+    price: 300,
+    imageUrl: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=800&q=80',
+    spiceLevel: 0,
+    dietary: ['Vegetarian', 'Vegan', 'Gluten-Free', 'Halal', 'Chef Special'],
+    calories: 90,
+    preparationTime: '5 mins',
+    available: true,
+    is_inventory_synced: false,
+    is_inventory_item: false,
+    item_source: 'menu'
+  },
+  {
+    id: 12,
+    name: 'Ceylon Spiced Lemongrass & Mint Cooler',
+    category: 'Crafted Drinks',
+    category_id: 6,
+    description: 'Cold-infused organic Ceylon lemongrass stalk, crushed garden spearmint, fresh lime juice, and wild bee honey over iced water.',
+    price: 320,
+    imageUrl: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=800&q=80',
+    spiceLevel: 0,
+    dietary: ['Vegetarian', 'Gluten-Free', 'Chef Special'],
+    calories: 110,
+    preparationTime: '5 mins',
+    available: true,
+    is_inventory_synced: false,
+    is_inventory_item: false,
+    item_source: 'menu'
   }
 ];
 
 /**
-/**
  * Category names map by numeric ID
  */
 const CATEGORY_NAMES_BY_ID = {
-  1: 'Mains',
-  2: 'Seafood',
-  3: 'Starters',
-  4: 'Vegetarian',
-  5: 'Desserts'
+  1: 'Starters',
+  2: 'Mains',
+  3: 'Mains',
+  4: 'Seafood',
+  5: 'Desserts',
+  6: 'Crafted Drinks',
+  7: 'Beverages & Water Bottles'
 };
 
 /**
@@ -137,11 +218,42 @@ function normalizeMenuItem(item) {
   const rawCatStr = String(rawCat || 'Mains');
   let cleanCategory = rawCatStr;
   const lowerCat = rawCatStr.toLowerCase();
-  if (lowerCat.includes('starter')) cleanCategory = 'Starters';
-  else if (lowerCat.includes('seafood') || lowerCat.includes('crab') || lowerCat.includes('fish') || lowerCat.includes('prawn')) cleanCategory = 'Seafood';
-  else if (lowerCat.includes('dessert') || lowerCat.includes('sweet')) cleanCategory = 'Desserts';
-  else if (lowerCat.includes('veg')) cleanCategory = 'Vegetarian';
-  else if (lowerCat.includes('main') || lowerCat.includes('curry') || lowerCat.includes('rice') || lowerCat.includes('lamprais') || lowerCat.includes('kottu')) cleanCategory = 'Mains';
+  if (
+    lowerCat === 'beverages & water bottles' ||
+    lowerCat === 'beverages-water-bottles' ||
+    lowerCat === 'water bottles & beverages' ||
+    lowerCat.includes('bottle') ||
+    lowerCat.includes('water') ||
+    item.is_inventory_item === true ||
+    item.item_source === 'inventory' ||
+    item.category_id === 7 ||
+    String(item.category_id) === '7'
+  ) {
+    cleanCategory = 'Beverages & Water Bottles';
+  } else if (
+    lowerCat === 'crafted drinks' ||
+    lowerCat === 'crafted-drinks' ||
+    lowerCat === 'hand crafted drinks' ||
+    lowerCat === 'hand-crafted-drinks' ||
+    lowerCat === 'craft beverages' ||
+    lowerCat === 'craft-beverages' ||
+    lowerCat.includes('drink') ||
+    lowerCat.includes('craft') ||
+    item.category_id === 6 ||
+    String(item.category_id) === '6'
+  ) {
+    cleanCategory = 'Crafted Drinks';
+  } else if (lowerCat.includes('starter') || lowerCat.includes('short')) {
+    cleanCategory = 'Starters';
+  } else if (lowerCat.includes('seafood') || lowerCat.includes('crab') || lowerCat.includes('fish') || lowerCat.includes('prawn')) {
+    cleanCategory = 'Seafood';
+  } else if (lowerCat.includes('dessert') || lowerCat.includes('sweet')) {
+    cleanCategory = 'Desserts';
+  } else if (lowerCat.includes('veg')) {
+    cleanCategory = 'Vegetarian';
+  } else if (lowerCat.includes('main') || lowerCat.includes('curry') || lowerCat.includes('rice') || lowerCat.includes('lamprais') || lowerCat.includes('kottu')) {
+    cleanCategory = 'Mains';
+  }
 
   const resolvedId = item.id ?? item.menu_item_id ?? item.menuItemId ?? item._id;
 
@@ -155,6 +267,34 @@ function normalizeMenuItem(item) {
   const resolvedSpice = item.spice_level !== undefined ? Number(item.spice_level) : (item.spiceLevel !== undefined ? Number(item.spiceLevel) : 0);
   const resolvedCatId = item.category_id !== undefined ? Number(item.category_id) : (typeof item.category === 'number' ? item.category : 1);
 
+  let parsedVariants = [];
+  if (
+    cleanCategory === 'Beverages & Water Bottles' ||
+    item.is_inventory_item === true ||
+    item.is_inventory_synced === true ||
+    item.item_source === 'inventory' ||
+    resolvedCatId === 7
+  ) {
+    if (Array.isArray(item.variants)) {
+      parsedVariants = item.variants;
+    } else if (typeof item.variants === 'string') {
+      try {
+        parsedVariants = JSON.parse(item.variants);
+      } catch (e) {
+        parsedVariants = [];
+      }
+    } else if (Array.isArray(item.sizeOptions)) {
+      parsedVariants = item.sizeOptions;
+    } else if (Array.isArray(item.sizes)) {
+      parsedVariants = item.sizes;
+    }
+  }
+
+  let derivedPrice = typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price || 0);
+  if ((!derivedPrice || derivedPrice === 0) && parsedVariants.length > 0 && parsedVariants[0].price) {
+    derivedPrice = Number(parsedVariants[0].price);
+  }
+
   return {
     id: resolvedId,
     menu_item_id: resolvedId,
@@ -164,7 +304,7 @@ function normalizeMenuItem(item) {
     category_id: isNaN(resolvedCatId) ? 1 : resolvedCatId,
     originalCategory: rawCatStr,
     description: item.description || '',
-    price: typeof item.price === 'string' ? parseFloat(item.price) : Number(item.price || 0),
+    price: derivedPrice,
     imageUrl: resolvedImage,
     image_url: resolvedImage,
     image: resolvedImage,
@@ -176,7 +316,8 @@ function normalizeMenuItem(item) {
     preparationTime: item.preparationTime || item.preparation_time || '20-25 mins',
     available: resolvedAvailable,
     is_available: resolvedAvailable,
-    status: resolvedAvailable ? 'Available' : 'Unavailable'
+    status: resolvedAvailable ? 'Available' : 'Unavailable',
+    variants: parsedVariants
   };
 }
 
@@ -189,7 +330,8 @@ export const menuService = {
     const queryParams = new URLSearchParams();
     if (category && category !== 'All') queryParams.append('category', category);
     if (search) queryParams.append('search', search);
-    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    queryParams.append('_t', String(Date.now()));
+    const queryString = `?${queryParams.toString()}`;
 
     let rawData = null;
 
@@ -218,15 +360,11 @@ export const menuService = {
       ? rawData.menu
       : Array.isArray(rawData?.menuItems)
       ? rawData.menuItems
-      : Array.isArray(rawData?.data?.items)
-      ? rawData.data.items
-      : Array.isArray(rawData?.data?.menu)
-      ? rawData.data.menu
       : Array.isArray(rawData?.data?.menuItems)
       ? rawData.data.menuItems
       : null;
 
-    if (items && Array.isArray(items) && items.length > 0) {
+    if (items && Array.isArray(items)) {
       let mapped = items.map(normalizeMenuItem).filter(Boolean);
 
       if (category && category !== 'All') {
@@ -311,7 +449,7 @@ export const menuService = {
         // Fallback
       }
     }
-    return ['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts'];
+    return ['All', 'Mains', 'Seafood', 'Starters', 'Vegetarian', 'Desserts', 'Hand Crafted Drinks', 'Beverages & Water Bottles'];
   },
 
   /**

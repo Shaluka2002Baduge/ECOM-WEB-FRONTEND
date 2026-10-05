@@ -19,7 +19,8 @@ const DEFAULT_CATEGORIES = [
   { id: 2, name: 'Seafood' },
   { id: 3, name: 'Starters' },
   { id: 4, name: 'Vegetarian' },
-  { id: 5, name: 'Desserts' }
+  { id: 5, name: 'Desserts' },
+  { id: 6, name: 'Hand Crafted Drinks' }
 ];
 
 /**
@@ -37,10 +38,21 @@ export const CreateDishModal = ({
 }) => {
   // Normalize categories prop to array of { id, name }
   const normalizedCategories = (categories && categories.length > 0 ? categories : DEFAULT_CATEGORIES)
-    .filter((c) => (typeof c === 'string' ? c !== 'All' : c.name !== 'All'))
+    .filter((c) => {
+      const name = typeof c === 'string' ? c : c.name;
+      return name !== 'All' && name !== 'Beverages & Water Bottles';
+    })
     .map((c, idx) => {
       if (typeof c === 'string') {
-        return { id: idx + 1, name: c };
+        const idMap = {
+          'Mains': 1,
+          'Seafood': 2,
+          'Starters': 3,
+          'Vegetarian': 4,
+          'Desserts': 5,
+          'Hand Crafted Drinks': 6
+        };
+        return { id: idMap[c] || (idx + 1), name: c };
       }
       return {
         id: Number(c.id || idx + 1),
@@ -298,6 +310,19 @@ export const CreateDishModal = ({
       setIsSaving(false);
     }
   };
+
+  const selectedCategoryObj = normalizedCategories.find(
+    (c) => Number(c.id) === Number(formData.category_id)
+  );
+  const isDrinkCategory =
+    Number(formData.category_id) === 6 ||
+    Number(formData.category_id) === 7 ||
+    (selectedCategoryObj && (
+      selectedCategoryObj.slug === 'crafted-drinks' ||
+      selectedCategoryObj.slug === 'beverages-water-bottles' ||
+      selectedCategoryObj.name?.toLowerCase().includes('drink') ||
+      selectedCategoryObj.name?.toLowerCase().includes('beverage')
+    ));
 
   return (
     <Modal
@@ -644,7 +669,7 @@ export const CreateDishModal = ({
         </div>
 
         {/* Price & Spice Level Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isDrinkCategory ? '1fr' : '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
           {/* Price - Keyboard Typing Only without wheel handlers */}
           <div>
             <label
@@ -694,48 +719,50 @@ export const CreateDishModal = ({
             )}
           </div>
 
-          {/* Spice Level (0 to 5) */}
-          <div>
-            <label
-              htmlFor="dish-spice-field"
-              style={{
-                display: 'block',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: 'var(--text-secondary, #94A3B8)',
-                marginBottom: '0.35rem'
-              }}
-            >
-              Spice Level (0 to 5)
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', height: '42px' }}>
-              <input
-                id="dish-spice-field"
-                type="range"
-                min="0"
-                max="5"
-                value={formData.spice_level}
-                onChange={(e) => setFormData((prev) => ({ ...prev, spice_level: Number(e.target.value) }))}
-                style={{ flex: 1, accentColor: 'var(--accent-gold, #D4AF37)', cursor: 'pointer' }}
-              />
-              <span
+          {/* Spice Level (0 to 5) - hidden for drinks */}
+          {!isDrinkCategory && (
+            <div>
+              <label
+                htmlFor="dish-spice-field"
                 style={{
-                  fontSize: '0.9rem',
-                  fontWeight: '700',
-                  color: 'var(--accent-gold, #D4AF37)',
-                  minWidth: '55px',
-                  textAlign: 'right'
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '600',
+                  color: 'var(--text-secondary, #94A3B8)',
+                  marginBottom: '0.35rem'
                 }}
               >
-                {formData.spice_level > 0 ? `${'🌶️'.repeat(formData.spice_level)} (${formData.spice_level})` : 'Mild (0)'}
-              </span>
+                Spice Level (0 to 5)
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', height: '42px' }}>
+                <input
+                  id="dish-spice-field"
+                  type="range"
+                  min="0"
+                  max="5"
+                  value={formData.spice_level}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, spice_level: Number(e.target.value) }))}
+                  style={{ flex: 1, accentColor: 'var(--accent-gold, #D4AF37)', cursor: 'pointer' }}
+                />
+                <span
+                  style={{
+                    fontSize: '0.9rem',
+                    fontWeight: '700',
+                    color: 'var(--accent-gold, #D4AF37)',
+                    minWidth: '55px',
+                    textAlign: 'right'
+                  }}
+                >
+                  {formData.spice_level > 0 ? `${'🌶️'.repeat(formData.spice_level)} (${formData.spice_level})` : 'Mild (0)'}
+                </span>
+              </div>
+              {formErrors.spice_level && (
+                <span className="text-red-400 text-xs mt-1" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
+                  {formErrors.spice_level}
+                </span>
+              )}
             </div>
-            {formErrors.spice_level && (
-              <span className="text-red-400 text-xs mt-1" style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>
-                {formErrors.spice_level}
-              </span>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Description */}

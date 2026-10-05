@@ -81,20 +81,67 @@ export const LoginPage = () => {
     <div
       className="login-page fade-in"
       style={{
+        position: 'relative',
         padding: '4rem 1rem 6rem 1rem',
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 'calc(100vh - 12rem)'
+        minHeight: 'calc(100vh - 12rem)',
+        overflow: 'hidden'
       }}
     >
+      {/* Background Video Loop Container */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          zIndex: 0,
+          pointerEvents: 'none'
+        }}
+      >
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            filter: 'brightness(1.02) contrast(1.05)'
+          }}
+        >
+          <source src="/videos/Login%20Page%20Video.mp4" type="video/mp4" />
+          <source src="/videos/Login Page Video.mp4" type="video/mp4" />
+        </video>
+        {/* Subtle royal vignette overlay - keeps video crisp & vivid while framing the center */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(ellipse at center, rgba(11, 12, 16, 0.25) 0%, rgba(11, 12, 16, 0.50) 100%)'
+          }}
+        />
+      </div>
+
       <div
         className="glass-panel"
         style={{
+          position: 'relative',
+          zIndex: 10,
           width: '100%',
           maxWidth: '460px',
           padding: '2.5rem',
-          boxShadow: 'var(--shadow-lg)'
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.75), 0 0 35px rgba(212, 175, 55, 0.2)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(18, 20, 26, 0.88)',
+          border: '1px solid rgba(212, 175, 55, 0.35)'
         }}
       >
         {/* Brand Crest & Heading */}

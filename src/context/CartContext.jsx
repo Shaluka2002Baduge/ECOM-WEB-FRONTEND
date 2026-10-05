@@ -34,12 +34,15 @@ export const CartProvider = ({ children }) => {
   }, [items]);
 
   /**
-   * Add item to cart with optional instructions
+   * Add item to cart with optional instructions and size variant
    */
   const addItem = useCallback((item, quantity = 1, specialInstructions = '') => {
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex(
-        (i) => i.id === item.id && (i.specialInstructions || '') === specialInstructions
+        (i) =>
+          i.id === item.id &&
+          (i.selectedSize || '') === (item.selectedSize || '') &&
+          (i.specialInstructions || '') === specialInstructions
       );
 
       if (existingIndex > -1) {
@@ -61,14 +64,25 @@ export const CartProvider = ({ children }) => {
   /**
    * Remove item from cart
    */
-  const removeItem = useCallback((itemId, specialInstructions = '') => {
+  const removeItem = useCallback((itemId, specialInstructions = '', selectedSize = null) => {
     setItems((prevItems) => {
-      const target = prevItems.find((i) => i.id === itemId);
+      const target = prevItems.find(
+        (i) =>
+          i.id === itemId &&
+          (selectedSize === null || (i.selectedSize || '') === (selectedSize || '')) &&
+          (i.specialInstructions || '') === specialInstructions
+      ) || prevItems.find((i) => i.id === itemId);
+
       if (target) {
         setAnnouncement(`Removed ${target.name} from your order.`);
       }
       return prevItems.filter(
-        (i) => !(i.id === itemId && (i.specialInstructions || '') === specialInstructions)
+        (i) =>
+          !(
+            i.id === itemId &&
+            (selectedSize === null || (i.selectedSize || '') === (selectedSize || '')) &&
+            (i.specialInstructions || '') === specialInstructions
+          )
       );
     });
   }, []);
@@ -76,14 +90,18 @@ export const CartProvider = ({ children }) => {
   /**
    * Update quantity of specific item
    */
-  const updateQuantity = useCallback((itemId, quantity, specialInstructions = '') => {
+  const updateQuantity = useCallback((itemId, quantity, specialInstructions = '', selectedSize = null) => {
     if (quantity <= 0) {
-      removeItem(itemId, specialInstructions);
+      removeItem(itemId, specialInstructions, selectedSize);
       return;
     }
     setItems((prevItems) =>
       prevItems.map((item) => {
-        if (item.id === itemId && (item.specialInstructions || '') === specialInstructions) {
+        if (
+          item.id === itemId &&
+          (selectedSize === null || (item.selectedSize || '') === (selectedSize || '')) &&
+          (item.specialInstructions || '') === specialInstructions
+        ) {
           return { ...item, quantity };
         }
         return item;

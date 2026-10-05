@@ -106,13 +106,17 @@ export const CheckoutModal = ({ isOpen, onClose }) => {
 
     const mappedItems = items.map((item) => {
       const resolvedId = item.id || item.menu_item_id || item.menuItemId || item._id;
+      const selectedSize = item.selectedSize || item.size || item.variant || null;
       return {
         id: Number(resolvedId) || resolvedId,
         menu_item_id: Number(resolvedId) || resolvedId,
         menuItemId: Number(resolvedId) || resolvedId,
         name: item.name || item.title,
         price: Number(item.price),
-        quantity: Number(item.quantity || 1)
+        quantity: Number(item.quantity || 1),
+        selectedSize,
+        size: selectedSize,
+        variant: selectedSize
       };
     });
 

@@ -41,8 +41,10 @@ export async function request(endpoint, options = {}) {
     ? (localStorage.getItem('ralahami_auth_token') || localStorage.getItem('token'))
     : null;
 
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     'Accept': 'application/json',
     ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
     ...(options.headers || {})
@@ -56,7 +58,9 @@ export async function request(endpoint, options = {}) {
     ...options
   };
 
-  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+  if (isFormData) {
+    config.body = options.body;
+  } else if (options.body && typeof options.body === 'object') {
     config.body = JSON.stringify(options.body);
   }
 
