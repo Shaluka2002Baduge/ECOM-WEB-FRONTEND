@@ -225,7 +225,38 @@ export const inventoryService = {
   async deleteInventoryItem(id) {
     const response = await apiClient.delete(`/inventory/${id}`);
     return unwrap(response);
+  },
+
+  /**
+   * Fetch dedicated daily inventory & ingredient consumption report for a given date
+   */
+  async getDailyInventoryReport(date) {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    try {
+      const response = await apiClient.get(`/inventory/reports/daily?date=${targetDate}`);
+      return response.data;
+    } catch (err) {
+      console.warn('Backend /inventory/reports/daily fallback:', err.message);
+      const inventory = await this.getInventory();
+      const lowStockCount = inventory.filter(i => (Number(i.stock) || 0) <= (Number(i.threshold) || 0)).length;
+      return {
+        success: true,
+        date: targetDate,
+        kpis: {
+          totalStockItems: inventory.length,
+          lowStockCount,
+          healthyStockCount: inventory.length - lowStockCount,
+          stockHealthRate: inventory.length ? Math.round(((inventory.length - lowStockCount) / inventory.length) * 100) : 100,
+          totalUnitsInStock: inventory.reduce((sum, i) => sum + (Number(i.stock) || 0), 0),
+          totalConsumedItemsCount: 0,
+          totalQuantityConsumed: 0
+        },
+        inventory,
+        consumedToday: []
+      };
+    }
   }
 };
 
 export default inventoryService;
+

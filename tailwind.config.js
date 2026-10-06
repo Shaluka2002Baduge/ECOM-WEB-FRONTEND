@@ -56,6 +56,11 @@ export default {
           600: '#D97706'
         }
       },
+      ringColor: {
+        DEFAULT: '#F59E0B',
+        gold: '#F59E0B',
+        amber: '#F59E0B',
+      },
       fontFamily: {
         serif: ['Cinzel', 'Playfair Display', 'Georgia', 'serif'],
         sans: ['Plus Jakarta Sans', 'Outfit', 'system-ui', 'sans-serif']

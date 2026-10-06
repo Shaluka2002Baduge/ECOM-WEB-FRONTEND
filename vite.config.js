@@ -8,6 +8,9 @@ export default defineConfig({
     host: true, // Exposes on localhost (127.0.0.1 and ::1) and local network
     port: 3000,
     open: false,
+    watch: {
+      ignored: ['**/dist/**', '**/public/uploads/**']
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

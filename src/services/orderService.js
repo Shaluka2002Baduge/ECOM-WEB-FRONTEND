@@ -250,7 +250,38 @@ export const orderService = {
    */
   async cancelOrder(orderId, reason = '') {
     return this.updateOrderStatus(orderId, 'CANCELLED', reason || 'Order cancelled by Admin Operations');
+  },
+
+  /**
+   * Fetch dedicated daily orders report for a given date (YYYY-MM-DD)
+   */
+  async getDailyOrdersReport(date) {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    try {
+      const response = await apiClient.get(`/admin/orders/reports/daily?date=${targetDate}`);
+      return response.data;
+    } catch (err) {
+      console.warn('Backend /admin/orders/reports/daily error, trying direct orders filter:', err.message);
+      const fallbackResponse = await apiClient.get(`/admin/orders?date=${targetDate}`);
+      const orders = fallbackResponse.data?.data || fallbackResponse.data || [];
+      return {
+        success: true,
+        date: targetDate,
+        kpis: {
+          totalOrders: orders.length,
+          completedOrders: orders.filter(o => ['COMPLETED', 'DELIVERED', 'SERVED'].includes((o.status || '').toUpperCase())).length,
+          cancelledOrders: orders.filter(o => ['CANCELLED', 'REJECTED'].includes((o.status || '').toUpperCase())).length,
+          totalRevenue: orders.reduce((sum, o) => sum + (parseFloat(o.total_amount || o.totalPrice || 0)), 0),
+          deliveryCount: orders.filter(o => (o.fulfillment_type || o.orderType || '').toLowerCase().includes('delivery')).length,
+          takeawayCount: orders.filter(o => (o.fulfillment_type || o.orderType || '').toLowerCase().includes('takeaway')).length,
+          dineInCount: orders.filter(o => (o.fulfillment_type || o.orderType || '').toLowerCase().includes('dine')).length
+        },
+        orders,
+        topSellingItems: []
+      };
+    }
   }
 };
 
 export default orderService;
+

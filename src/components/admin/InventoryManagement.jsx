@@ -7,12 +7,15 @@ import {
   CheckCircle2,
   Edit3,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  FileDown,
+  Calendar
 } from 'lucide-react';
 import Button from '../common/Button';
 import RoyalPagination from '../common/RoyalPagination';
 import InventoryModal from './InventoryModal';
 import inventoryService, { FALLBACK_INVENTORY_ITEMS } from '../../services/inventoryService';
+import { generateInventoryDailyPDF } from '../../utils/pdfReportGenerator';
 
 const INVENTORY_PER_PAGE = 8;
 
@@ -25,6 +28,36 @@ export const InventoryManagement = ({ onNotify }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Daily Report Export State
+  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  const handleDownloadDailyReport = async () => {
+    setIsExportingPDF(true);
+    try {
+      const data = await inventoryService.getDailyInventoryReport(reportDate);
+      const filename = generateInventoryDailyPDF(data, 'Admin Operations');
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'success',
+          title: 'Daily Inventory Report Generated',
+          message: `Generated and downloaded ${filename}`
+        });
+      }
+    } catch (err) {
+      console.error('[DAILY INVENTORY REPORT ERROR]', err);
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'error',
+          title: 'Export Failed',
+          message: 'Could not generate daily inventory PDF report.'
+        });
+      }
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   // Load Inventory from Backend Database
   const fetchInventory = useCallback(async (isSilent = false) => {
@@ -349,7 +382,54 @@ export const InventoryManagement = ({ onNotify }) => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          {/* Daily Report Date Picker */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.35rem 0.65rem'
+            }}
+          >
+            <Calendar size={14} style={{ color: 'var(--accent-gold)' }} />
+            <input
+              type="date"
+              value={reportDate}
+              onChange={(e) => setReportDate(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              title="Select specific date for Daily Stock Report"
+            />
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleDownloadDailyReport}
+            isLoading={isExportingPDF}
+            style={{
+              fontWeight: '600',
+              background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(245, 158, 11, 0.28))',
+              borderColor: 'var(--accent-gold)',
+              color: 'var(--accent-gold)'
+            }}
+            title="Download stock status and kitchen ingredient deductions PDF for selected date"
+          >
+            <FileDown size={14} style={{ marginRight: '0.4rem' }} />
+            Download Daily Report
+          </Button>
+
           <button
             type="button"
             onClick={() => fetchInventory(false)}

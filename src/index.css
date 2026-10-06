@@ -198,14 +198,79 @@ html.light body,
 }
 
 /* ==========================================================================
-   WCAG Accessibility Core: Focus States, Skip Link, Screen Reader Utilities
+   Universal Royal Gold / Amber Focus System (WCAG 2.1 Compliant)
+   Globally eliminates all browser default blue outlines, borders, and rings.
+   Applies a luxurious Ceylon Royal Gold / Amber glow (#F59E0B / #D4AF37).
    ========================================================================== */
 
-/* Universal high-visibility focus indicator (WCAG 2.4.7 Focus Visible) */
+/* Universal Focus-Visible across all interactive elements */
 :focus-visible {
-  outline: 3px solid var(--accent-amber);
-  outline-offset: 3px;
+  outline: 2px solid #F59E0B !important;
+  outline-offset: 2px !important;
   border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Global Form Inputs, Textareas, Selects, and Search Bars Base Transition & Focus */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+textarea,
+select,
+.ralahami-input-group input,
+.ralahami-numeric-group input {
+  outline: none !important;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):focus,
+textarea:focus,
+select:focus,
+.ralahami-input-group input:focus,
+.ralahami-numeric-group input:focus {
+  outline: none !important;
+  border-color: #F59E0B !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28), 0 0 16px rgba(245, 158, 11, 0.18) !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="submit"]):not([type="button"]):not([type="reset"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+.ralahami-input-group input:focus-visible,
+.ralahami-numeric-group input:focus-visible {
+  outline: none !important;
+  border-color: #F59E0B !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.32), 0 0 20px rgba(245, 158, 11, 0.22) !important;
+}
+
+/* Error States when Focused */
+input[aria-invalid="true"]:focus,
+textarea[aria-invalid="true"]:focus,
+select[aria-invalid="true"]:focus,
+.input-error:focus {
+  border-color: #EF4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.28), 0 0 16px rgba(239, 68, 68, 0.18) !important;
+}
+
+/* Checkboxes & Radios */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: #F59E0B !important;
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus,
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid #F59E0B !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.35) !important;
+}
+
+/* Date & Time Controls */
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus {
+  border-color: #F59E0B !important;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28), 0 0 14px rgba(245, 158, 11, 0.16) !important;
 }
 
 /* Skip link to jump directly to main content */

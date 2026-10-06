@@ -844,7 +844,7 @@ export const CheckoutPage = () => {
                       lineHeight: '1.5'
                     }}
                   >
-                    24 Galle Face Court, Colombo 03 • Ready for collection in ~20-30 minutes. Complimentary takeaway
+                    Riverside Road, Ratnapura • Ready for collection in ~20-30 minutes. Complimentary takeaway
                     packing with zero delivery surcharge.
                   </p>
                 </div>

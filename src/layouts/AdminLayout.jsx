@@ -11,7 +11,9 @@ import {
   Menu as MenuIcon,
   X,
   ExternalLink,
-  Clock
+  Clock,
+  MessageSquare,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Alert from '../components/common/Alert';
@@ -34,11 +36,13 @@ export const AdminLayout = () => {
   // Derive active section directly from the current browser URL
   const getActiveSection = () => {
     const path = location.pathname.toLowerCase();
+    if (path.includes('/admin/inquiries')) return 'inquiries';
     if (path.includes('/admin/menu')) return 'menu';
     if (path.includes('/admin/inventory')) return 'inventory';
     if (path.includes('/admin/reservations')) return 'reservations';
     if (path.includes('/admin/staff')) return 'staff';
     if (path.includes('/admin/reports')) return 'reports';
+    if (path.includes('/admin/settings')) return 'settings';
     if (path.includes('/admin/orders')) return 'orders';
     return 'orders';
   };
@@ -67,6 +71,13 @@ export const AdminLayout = () => {
       label: 'Order Fulfillment',
       icon: ShoppingBag,
       description: 'Live dispatch, delivery & takeaway'
+    },
+    {
+      id: 'inquiries',
+      path: '/admin/inquiries',
+      label: 'Palace Inquiries',
+      icon: MessageSquare,
+      description: 'Customer messages & email replies'
     },
     {
       id: 'menu',
@@ -102,6 +113,13 @@ export const AdminLayout = () => {
       label: 'Financial & Reports',
       icon: TrendingUp,
       description: 'Sales velocity, revenue & analytics'
+    },
+    {
+      id: 'settings',
+      path: '/admin/settings',
+      label: 'Settings',
+      icon: Settings,
+      description: 'Restaurant profile & security'
     }
   ];
 

@@ -15,10 +15,14 @@ import {
   Check,
   UserCheck,
   LogOut,
-  MapPin
+  MapPin,
+  FileDown,
+  Calendar
 } from 'lucide-react';
 import axios from 'axios';
 import { apiClient } from '../../api/apiClient';
+import reservationService from '../../services/reservationService';
+import { generateReservationsDailyPDF } from '../../utils/pdfReportGenerator';
 import Button from '../common/Button';
 import RoyalPagination from '../common/RoyalPagination';
 import ReservationModal from './ReservationModal';
@@ -71,6 +75,36 @@ export const ReservationManagement = ({ onNotify }) => {
   const [selectedRes, setSelectedRes] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Daily Report Export State
+  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  const handleDownloadDailyReport = async () => {
+    setIsExportingPDF(true);
+    try {
+      const data = await reservationService.getDailyReservationsReport(reportDate);
+      const filename = generateReservationsDailyPDF(data, 'Admin Operations');
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'success',
+          title: 'Daily Reservations Report Generated',
+          message: `Generated and downloaded ${filename}`
+        });
+      }
+    } catch (err) {
+      console.error('[DAILY RESERVATIONS REPORT ERROR]', err);
+      if (typeof onNotify === 'function') {
+        onNotify({
+          type: 'error',
+          title: 'Export Failed',
+          message: 'Could not generate daily reservations PDF report.'
+        });
+      }
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   // Helper to get persisted deleted reservation IDs across page refreshes
   const getPersistedDeletedIds = () => {
@@ -763,7 +797,54 @@ export const ReservationManagement = ({ onNotify }) => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Daily Report Date Picker */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-medium)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.35rem 0.65rem'
+            }}
+          >
+            <Calendar size={14} style={{ color: 'var(--accent-gold)' }} />
+            <input
+              type="date"
+              value={reportDate}
+              onChange={(e) => setReportDate(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              title="Select specific date for Daily Seating & Reservations Report"
+            />
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleDownloadDailyReport}
+            isLoading={isExportingPDF}
+            style={{
+              fontWeight: '600',
+              background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(245, 158, 11, 0.28))',
+              borderColor: 'var(--accent-gold)',
+              color: 'var(--accent-gold)'
+            }}
+            title="Download table allocations and guest covers PDF for selected date"
+          >
+            <FileDown size={14} style={{ marginRight: '0.4rem' }} />
+            Download Daily Report
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

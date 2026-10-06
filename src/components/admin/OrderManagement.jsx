@@ -16,10 +16,13 @@ import {
   MapPin,
   UtensilsCrossed,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  FileDown,
+  Calendar
 } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import orderService from '../../services/orderService';
+import { generateOrdersDailyPDF } from '../../utils/pdfReportGenerator';
 import { useToast } from '../../context/ToastContext';
 import { formatCurrency } from '../../utils/currency';
 import Button from '../common/Button';
@@ -58,6 +61,34 @@ export const OrderManagement = ({ onNotify }) => {
 
   // Selected Order for Full Details Modal
   const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
+
+  // Daily Report Export State
+  const [reportDate, setReportDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+
+  const handleDownloadDailyReport = async () => {
+    setIsExportingPDF(true);
+    try {
+      const data = await orderService.getDailyOrdersReport(reportDate);
+      if (!data || !data.orders || data.orders.length === 0) {
+        toast.warning(`No orders found for selected date: ${reportDate}`);
+      }
+      const filename = generateOrdersDailyPDF(data, 'Admin Operations');
+      toast.success(`Downloaded Daily Orders Report (${reportDate})`);
+      if (onNotify) {
+        onNotify({
+          type: 'success',
+          title: 'Daily Report Generated',
+          message: `Generated and downloaded ${filename}`
+        });
+      }
+    } catch (err) {
+      console.error('[DAILY ORDER REPORT ERROR]', err);
+      toast.error('Failed to generate daily orders report');
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
 
   const fetchOrders = useCallback(async (quiet = false) => {
     if (!quiet) setIsLoading(true);
@@ -435,7 +466,54 @@ export const OrderManagement = ({ onNotify }) => {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Daily Report Date Selector */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              backgroundColor: 'var(--bg-surface, #1E293B)',
+              border: '1px solid var(--border-medium, rgba(244, 237, 228, 0.2))',
+              borderRadius: 'var(--radius-sm, 8px)',
+              padding: '0.35rem 0.65rem'
+            }}
+          >
+            <Calendar size={14} style={{ color: 'var(--accent-gold, #D97706)' }} />
+            <input
+              type="date"
+              value={reportDate}
+              onChange={(e) => setReportDate(e.target.value)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-primary, #F8FAFC)',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+              title="Select specific date for Daily Fulfillment Report"
+            />
+          </div>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleDownloadDailyReport}
+            isLoading={isExportingPDF}
+            style={{
+              fontWeight: '600',
+              background: 'linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(245, 158, 11, 0.28))',
+              borderColor: 'var(--accent-gold, #D97706)',
+              color: 'var(--accent-gold, #F59E0B)'
+            }}
+            title="Download PDF report for the selected date"
+          >
+            <FileDown size={14} style={{ marginRight: '0.4rem' }} />
+            Download Daily Report
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

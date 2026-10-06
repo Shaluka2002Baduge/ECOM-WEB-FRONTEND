@@ -94,7 +94,7 @@ export const NumericInput = ({
             border: error ? '1px solid #ef4444' : '1px solid var(--border-medium)',
             borderRadius: 'var(--radius-md)',
             outline: 'none',
-            transition: 'border-color var(--transition-fast)'
+            transition: 'border-color var(--transition-fast), box-shadow var(--transition-fast)'
           }}
         />
 

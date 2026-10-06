@@ -9,6 +9,8 @@ import AdminLayout from './layouts/AdminLayout';
 // Public Customer Pages
 import HomePage from './pages/HomePage';
 import MenuPage from './pages/MenuPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
 import CheckoutPage from './pages/CheckoutPage';
 import OrderTrackingPage from './pages/OrderTrackingPage';
 import LoginPage from './pages/LoginPage';
@@ -21,6 +23,8 @@ import InventoryManagement from './components/admin/InventoryManagement';
 import ReservationManagement from './components/admin/ReservationManagement';
 import StaffManagement from './components/admin/StaffManagement';
 import ReportsManagement from './components/admin/ReportsManagement';
+import InquiryManagement from './components/admin/InquiryManagement';
+import SettingsManagement from './components/admin/SettingsManagement';
 
 import AdminErrorBoundary from './components/AdminErrorBoundary';
 
@@ -50,6 +54,8 @@ function App() {
       <Route element={<CustomerLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/menu" element={<MenuPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/reservations" element={<Navigate to="/menu" replace />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders/track" element={<OrderTrackingPage />} />
@@ -73,11 +79,13 @@ function App() {
       >
         <Route index element={<Navigate to="orders" replace />} />
         <Route path="orders" element={<AdminRoute Component={OrderManagement} />} />
+        <Route path="inquiries" element={<AdminRoute Component={InquiryManagement} />} />
         <Route path="menu" element={<AdminRoute Component={MenuManagement} />} />
         <Route path="inventory" element={<AdminRoute Component={InventoryManagement} />} />
         <Route path="reservations" element={<AdminRoute Component={ReservationManagement} />} />
         <Route path="staff" element={<AdminRoute Component={StaffManagement} />} />
         <Route path="reports" element={<AdminRoute Component={ReportsManagement} />} />
+        <Route path="settings" element={<AdminRoute Component={SettingsManagement} />} />
         <Route path="*" element={<Navigate to="orders" replace />} />
       </Route>
 
